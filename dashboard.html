@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Dashboard</title>
+      <script>
+        var socket = new WebSocket("ws://192.168.1.139:7000");
+        socket.onmessage  = 
+        function(event) {  
+          var full_data = event.data;
+          console.log(full_data);
+          var data = JSON.parse(full_data);
+          var id_data = data.id;
+          var cla_data = data.cla;
+          var inj_data = data.inj;
+          var cyc_data = data.cyc;
+          var pro_data = data.pro;
+
+          if (inj_data == 1){
+            document.getElementById("date_value").innerHTML = new Date().toLocaleDateString();
+            document.getElementById("time_value").innerHTML = new Date().toLocaleTimeString();
+          }
+
+          if(cla_data == 0){
+            cla_data = "OFF";
+            cla_data = cla_data.fontcolor("red");
+          }else{
+            cla_data = "ON";
+            cla_data = cla_data.fontcolor("green");
+          }
+          if(inj_data == 0){
+            inj_data = "OFF";
+            inj_data = inj_data.fontcolor("red");
+          }else{
+            inj_data = "ON";
+            inj_data = inj_data.fontcolor("green");
+          }
+
+          document.getElementById("id_value").innerHTML = id_data;
+          document.getElementById("cla_value").innerHTML = cla_data;
+          document.getElementById("inj_value").innerHTML = inj_data;
+          document.getElementById("cyc_value").innerHTML = cyc_data;
+          document.getElementById("pro_value").innerHTML = pro_data;
+          
+        };
+      </script>
+      <style>
+        .box {
+          width: 350px;
+          height: 250px;
+          position: relative;
+          border-radius: 10px;
+          margin: 10px;
+          text-align: center;
+          font-size: 18px;
+        }
+        .cycle {
+          width: 175px;
+          height: 187.5px;
+          background: green;
+          position: absolute;
+          border-radius: 10px 0px 0px 0px;
+        }
+        .cyctext {
+          font-weight: bold;
+          font-size: 56px;
+          text-align: center;
+          margin-top: 25%;
+        }
+        .clamp {
+          width: 87.5px;
+          height: 62.5px;
+          background: blue;
+          position: absolute;
+          margin-top: 187px;
+          border-radius: 0px 0px 0px 10px;
+        }
+        .inject {
+          width: 87.5px;
+          height: 62.5px;
+          background: violet;
+          position: absolute;
+          margin-top: 187px;
+          margin-left: 25%;
+        }
+        .onoff {
+          font-weight: bold;
+          font-size: 20px;
+          text-align: center;
+          margin-top: 5px;
+        }
+        .product {
+          width: 175px;
+          height: 115px;
+          background: yellow;
+          position: absolute;
+          margin-left: 50%;
+          border-radius: 0px 10px 0px 0px;
+        }
+        .productext {
+          font-weight: bold;
+          font-size: 56px;
+          text-align: center;
+          margin-top: 10px;
+        }
+        .time {
+          width: 175px;
+          height: 72.5px;
+          background: orange;
+          position: absolute;
+          margin-left: 50%;
+          margin-top: 115px;
+        }
+        .idbox {
+          width: 175px;
+          height: 62.5px;
+          background: blueviolet;
+          position: absolute;
+          margin-left: 50%;
+          margin-top: 187px;
+          border-radius: 0px 0px 10px 0px;
+        }
+      </style>
+   </head>
+   <body>
+      <div class="box">
+
+        <div class="cycle">
+          Last Cycle Duration:<div class="cyctext" id="cyc_value"></div>
+        </div>
+
+        <div class="clamp">
+          Clamp:<div class="onoff" id="cla_value">OFF</div>
+        </div>
+
+        <div class="inject">
+          Inject:<div class="onoff" id="inj_value">OFF</div>
+        </div>
+
+        <div class="product">
+          Product:<div class="productext" id="pro_value"></div>
+        </div>
+        <div class="time">
+          Last Cycle On:<br>
+          <span id="date_value"></span><br>
+          <span id="time_value"></span>
+        </div>
+        <div class="idbox">
+          ID:<br>
+          <span id="id_value"></span>
+        </div>
+
+      </div>
+   </body>
+</html>
