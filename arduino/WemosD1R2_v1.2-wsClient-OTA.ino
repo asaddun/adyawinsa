@@ -287,7 +287,6 @@ void monitorCycleTime(){
           sendData=true;
         }
         else{
-          cycleTime = 0;
           sendData=false;
         }
       } 
@@ -309,10 +308,7 @@ void monitorCycleTime(){
     digitalWrite(LED_BUILTIN, LOW); 
   }
 */
-  if(sendData == false){
-    numct = cycleTime;
-  }
-  else if(sendData == true){
+  if(sendData == true){
     //sprintf(str_ct,"%d",cycleTime);
     numct = cycleTime;
     
