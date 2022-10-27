@@ -74,8 +74,10 @@ int pumpState = 0;     // previous state of the button
 char heaterON[2]="0"; // Heater State
 char pumpON[2]="0"; // Pump State
 int timerSensor=0;  // sensor update per 2 detik
-int numct, staInj, staCla, product;
-String value, JSON_Data;
+int numct, staInj, staCla, shut;
+int c_day, c_month, c_year;
+int c_hour, c_minute, c_second;
+String timestamp = "none", JSON_Data;
 boolean sendws = false, wifiConnected = true, sendData = false, connected = false;
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
@@ -103,7 +105,7 @@ char html_template[] PROGMEM = R"=====(
                               cla_data = data.cla;
                               inj_data = data.inj;
                               cyc_data = data.cyc;
-                              pro_data = data.pro;
+                              pro_data = data.shut;
                               if(cla_data == 0){
                                 cla_data = "OFF";
                               }else{
@@ -118,7 +120,7 @@ char html_template[] PROGMEM = R"=====(
                               document.getElementById("cla_value").innerHTML = cla_data;
                               document.getElementById("inj_value").innerHTML = inj_data;
                               document.getElementById("cyc_value").innerHTML = cyc_data;
-                              document.getElementById("pro_value").innerHTML = pro_data;
+                              document.getElementById("shut_value").innerHTML = shut_data;
                             };
       </script>
    </head>
@@ -198,7 +200,7 @@ void setup() {
   server.onNotFound(handleNotFound);
   server.begin();
 
-  webSocket.begin("192.168.10.197", 7000, "/");
+  webSocket.begin("192.168.1.130", 7000, "/");
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
@@ -290,7 +292,7 @@ void monitorCycleTime(){
       if (stateInject == HIGH){
         //Serial.println("State INJECT=ON");
         staInj = 1;
-        product += 1;
+        shut += 1;
         Serial.println("1,1,");
         sendws = true;
         timenow=millis();
@@ -326,13 +328,16 @@ void monitorCycleTime(){
     numct = cycleTime;
 
     time_t epochTime = timeClient.getEpochTime();
-    String formattedtime = timeClient.getFormattedTime();
+    c_hour = timeClient.getHours();
+    c_minute = timeClient.getMinutes();
+    c_second = timeClient.getSeconds();
+    //String formattedtime = timeClient.getFormattedTime();
     struct tm *ptm = gmtime ((time_t *)&epochTime);
-    int monthDay = ptm->tm_mday;
-    int currentMonth = ptm->tm_mon+1;
-    int currentYear = ptm->tm_year+1900;
-    String currentDate = String(currentYear) + "-" + String(currentMonth) + "-" + String(monthDay);
-    String timestamp = currentDate + " " + formattedtime;
+    c_day = ptm->tm_mday;
+    c_month = ptm->tm_mon+1;
+    c_year = ptm->tm_year+1900;
+    //String currentDate = String(currentYear) + "" + String(currentMonth) + "" + String(monthDay);
+    //timestamp = currentDate + "" + formattedtime;
     Serial.println(timestamp);
     
     Serial.println(numct);
@@ -370,8 +375,22 @@ void loop() {
     JSON_Data += staInj;
     JSON_Data += ",\"cyc\":";
     JSON_Data += numct;
-    JSON_Data += ",\"pro\":";
-    JSON_Data += product;
+    JSON_Data += ",\"shut\":";
+    JSON_Data += shut;
+    JSON_Data += ",\"day\":";
+    JSON_Data += c_day;
+    JSON_Data += ",\"mon\":";
+    JSON_Data += c_month;
+    JSON_Data += ",\"year\":";
+    JSON_Data += c_year;
+    
+    JSON_Data += ",\"hour\":";
+    JSON_Data += c_hour;
+    JSON_Data += ",\"min\":";
+    JSON_Data += c_minute;
+    JSON_Data += ",\"sec\":";
+    JSON_Data += c_second;
+    
     JSON_Data += "}";
     Serial.println(JSON_Data);
     webSocket.sendTXT(JSON_Data);
