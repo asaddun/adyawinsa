@@ -3,9 +3,9 @@
    <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Dashboard</title>
+      <title>Desktop</title>
       <script>
-        var socket = new WebSocket("ws://192.168.1.139:7000");
+        var socket = new WebSocket("ws://192.168.1.130:7000");
         socket.onmessage  = 
         function(event) {  
           var full_data = event.data;
@@ -15,11 +15,21 @@
           var cla_data = data.cla;
           var inj_data = data.inj;
           var cyc_data = data.cyc;
-          var pro_data = data.pro;
+          var shut_data = data.shut;
+          var day_data = data.day;
+          var mon_data = data.mon;
+          var year_data = data.year;
+          var hour_data = data.hour;
+          var min_data = data.min;
+          var sec_data = data.sec;
 
           if (inj_data == 1){
-            document.getElementById("date_value").innerHTML = new Date().toLocaleDateString();
-            document.getElementById("time_value").innerHTML = new Date().toLocaleTimeString();
+            document.getElementById("day_value").innerHTML = day_data;
+            document.getElementById("mon_value").innerHTML = mon_data;
+            document.getElementById("year_value").innerHTML = year_data;
+            document.getElementById("hour_value").innerHTML = hour_data;
+            document.getElementById("min_value").innerHTML = min_data;
+            document.getElementById("sec_value").innerHTML = sec_data;
           }
 
           if(cla_data == 0){
@@ -41,7 +51,7 @@
           document.getElementById("cla_value").innerHTML = cla_data;
           document.getElementById("inj_value").innerHTML = inj_data;
           document.getElementById("cyc_value").innerHTML = cyc_data;
-          document.getElementById("pro_value").innerHTML = pro_data;
+          document.getElementById("shut_value").innerHTML = shut_data;
           
         };
       </script>
@@ -90,7 +100,7 @@
           text-align: center;
           margin-top: 5px;
         }
-        .product {
+        .shut {
           width: 175px;
           height: 115px;
           background: yellow;
@@ -98,7 +108,7 @@
           margin-left: 50%;
           border-radius: 0px 10px 0px 0px;
         }
-        .productext {
+        .shutext {
           font-weight: bold;
           font-size: 56px;
           text-align: center;
@@ -138,13 +148,13 @@
           Inject:<div class="onoff" id="inj_value">OFF</div>
         </div>
 
-        <div class="product">
-          Product:<div class="productext" id="pro_value"></div>
+        <div class="shut">
+          Shut:<div class="shutext" id="shut_value"></div>
         </div>
         <div class="time">
           Last Cycle On:<br>
-          <span id="date_value"></span><br>
-          <span id="time_value"></span>
+          <span id="day_value">0</span>/<span id="mon_value">0</span>/<span id="year_value">0</span><br>
+          <span id="hour_value">0</span>:<span id="min_value">0</span>:<span id="sec_value">0</span>
         </div>
         <div class="idbox">
           ID:<br>
