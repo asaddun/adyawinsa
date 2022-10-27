@@ -202,7 +202,7 @@ void setup() {
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
-  ArduinoOTA.setPassword((const char *)"123");
+  ArduinoOTA.setPassword("1234");
 
   ArduinoOTA.onStart([]() {
     Serial.println("Start");
