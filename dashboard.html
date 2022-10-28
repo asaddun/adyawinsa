@@ -12,46 +12,49 @@
           console.log(full_data);
           var data = JSON.parse(full_data);
           var id_data = data.id;
-          var cla_data = data.cla;
-          var inj_data = data.inj;
-          var cyc_data = data.cyc;
-          var shut_data = data.shut;
-          var day_data = data.day;
-          var mon_data = data.mon;
-          var year_data = data.year;
-          var hour_data = data.hour;
-          var min_data = data.min;
-          var sec_data = data.sec;
 
-          if (inj_data == 1){ // take the timestamp when inject
-            document.getElementById("day_value").innerHTML = day_data;
-            document.getElementById("mon_value").innerHTML = mon_data;
-            document.getElementById("year_value").innerHTML = year_data;
-            document.getElementById("hour_value").innerHTML = hour_data;
-            document.getElementById("min_value").innerHTML = min_data;
-            document.getElementById("sec_value").innerHTML = sec_data;
-          }
+          if(id_data == 1000076){ // mcid
+            var cla_data = data.cla;
+            var inj_data = data.inj;
+            var cyc_data = data.cyc;
+            var shut_data = data.shut;
+            var day_data = data.day;
+            var mon_data = data.mon;
+            var year_data = data.year;
+            var hour_data = data.hour;
+            var min_data = data.min;
+            var sec_data = data.sec;
 
-          if(cla_data == 0){
-            cla_data = "OFF";
-            cla_data = cla_data.fontcolor("red");
-          }else{
-            cla_data = "ON";
-            cla_data = cla_data.fontcolor("green");
-          }
-          if(inj_data == 0){
-            inj_data = "OFF";
-            inj_data = inj_data.fontcolor("red");
-          }else{
-            inj_data = "ON";
-            inj_data = inj_data.fontcolor("green");
-          }
+            if (inj_data == 1){ // take the timestamp when inject
+              document.getElementById("day_value").innerHTML = day_data;
+              document.getElementById("mon_value").innerHTML = mon_data;
+              document.getElementById("year_value").innerHTML = year_data;
+              document.getElementById("hour_value").innerHTML = hour_data;
+              document.getElementById("min_value").innerHTML = min_data;
+              document.getElementById("sec_value").innerHTML = sec_data;
+            }
 
-          document.getElementById("id_value").innerHTML = id_data;
-          document.getElementById("cla_value").innerHTML = cla_data;
-          document.getElementById("inj_value").innerHTML = inj_data;
-          document.getElementById("cyc_value").innerHTML = cyc_data;
-          document.getElementById("shut_value").innerHTML = shut_data;
+            if(cla_data == 0){
+              cla_data = "OFF";
+              cla_data = cla_data.fontcolor("red");
+            }else{
+              cla_data = "ON";
+              cla_data = cla_data.fontcolor("green");
+            }
+            if(inj_data == 0){
+              inj_data = "OFF";
+              inj_data = inj_data.fontcolor("red");
+            }else{
+              inj_data = "ON";
+              inj_data = inj_data.fontcolor("green");
+            }
+
+            document.getElementById("id_value").innerHTML = id_data;
+            document.getElementById("cla_value").innerHTML = cla_data;
+            document.getElementById("inj_value").innerHTML = inj_data;
+            document.getElementById("cyc_value").innerHTML = cyc_data;
+            document.getElementById("shut_value").innerHTML = shut_data;
+          }
           
         };
       </script>
