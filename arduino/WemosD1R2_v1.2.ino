@@ -24,7 +24,7 @@ void(* resetFunc) (void) = 0; //declare reset function @ address 0
 char buff[64];
 char versi[6]="1.0.0"; // System Version
 String versionNum="1.0.0"; // System Version
-char mcid[8]="1000076"; // A_Asset_ID or Machine ID API 78 
+char mcid[8]="1000077"; // A_Asset_ID or Machine ID API 78 
 
 #define  pinTemp D5           //Get Temp Data
 #define  pinClam D6           //Clamp Process
@@ -77,7 +77,7 @@ int timerSensor=0;  // sensor update per 2 detik
 int numct, staInj, staCla, shut;
 int c_day, c_month, c_year;
 int c_hour, c_minute, c_second;
-String timestamp = "none", JSON_Data;
+String JSON_Data, WS_address = "192.168.1.130";
 boolean sendws = false, wifiConnected = true, sendData = false, connected = false;
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
@@ -103,47 +103,49 @@ char html_template[] PROGMEM = R"=====(
           console.log(full_data);
           var data = JSON.parse(full_data);
           var id_data = data.id;
-          var cla_data = data.cla;
-          var inj_data = data.inj;
-          var cyc_data = data.cyc;
-          var shut_data = data.shut;
-          var day_data = data.day;
-          var mon_data = data.mon;
-          var year_data = data.year;
-          var hour_data = data.hour;
-          var min_data = data.min;
-          var sec_data = data.sec;
 
-          if (inj_data == 1){ // take the timestamp when inject
-            document.getElementById("day_value").innerHTML = day_data;
-            document.getElementById("mon_value").innerHTML = mon_data;
-            document.getElementById("year_value").innerHTML = year_data;
-            document.getElementById("hour_value").innerHTML = hour_data;
-            document.getElementById("min_value").innerHTML = min_data;
-            document.getElementById("sec_value").innerHTML = sec_data;
+          if(id_data == 1000077){
+            var cla_data = data.cla;
+            var inj_data = data.inj;
+            var cyc_data = data.cyc;
+            var shut_data = data.shut;
+            var day_data = data.day;
+            var mon_data = data.mon;
+            var year_data = data.year;
+            var hour_data = data.hour;
+            var min_data = data.min;
+            var sec_data = data.sec;
+  
+            if (inj_data == 1){ // take the timestamp when inject
+              document.getElementById("day_value").innerHTML = day_data;
+              document.getElementById("mon_value").innerHTML = mon_data;
+              document.getElementById("year_value").innerHTML = year_data;
+              document.getElementById("hour_value").innerHTML = hour_data;
+              document.getElementById("min_value").innerHTML = min_data;
+              document.getElementById("sec_value").innerHTML = sec_data;
+            }
+  
+            if(cla_data == 0){
+              cla_data = "OFF";
+              cla_data = cla_data.fontcolor("red");
+            }else{
+              cla_data = "ON";
+              cla_data = cla_data.fontcolor("green");
+            }
+            if(inj_data == 0){
+              inj_data = "OFF";
+              inj_data = inj_data.fontcolor("red");
+            }else{
+              inj_data = "ON";
+              inj_data = inj_data.fontcolor("green");
+            }
+  
+            document.getElementById("id_value").innerHTML = id_data;
+            document.getElementById("cla_value").innerHTML = cla_data;
+            document.getElementById("inj_value").innerHTML = inj_data;
+            document.getElementById("cyc_value").innerHTML = cyc_data;
+            document.getElementById("shut_value").innerHTML = shut_data;
           }
-
-          if(cla_data == 0){
-            cla_data = "OFF";
-            cla_data = cla_data.fontcolor("red");
-          }else{
-            cla_data = "ON";
-            cla_data = cla_data.fontcolor("green");
-          }
-          if(inj_data == 0){
-            inj_data = "OFF";
-            inj_data = inj_data.fontcolor("red");
-          }else{
-            inj_data = "ON";
-            inj_data = inj_data.fontcolor("green");
-          }
-
-          document.getElementById("id_value").innerHTML = id_data;
-          document.getElementById("cla_value").innerHTML = cla_data;
-          document.getElementById("inj_value").innerHTML = inj_data;
-          document.getElementById("cyc_value").innerHTML = cyc_data;
-          document.getElementById("shut_value").innerHTML = shut_data;
-          
         };
       </script>
       <style>
@@ -308,7 +310,7 @@ void setup() {
         delay(1000);
     }
     
-  wifiManager.autoConnect("esp8266-0de890"); // AP esp if can't connect to wifi (each board please make it different)
+  wifiManager.autoConnect("esp8266-93430c"); // AP esp if can't connect to wifi (each board please make it different)
   Serial.println("Connected..");
 
   Serial.print("Local IP: ");
@@ -318,7 +320,7 @@ void setup() {
   server.onNotFound(handleNotFound);
   server.begin();
 
-  webSocket.begin("192.168.1.130", 7000, "/"); // Websocket server address
+  webSocket.begin(WS_address, 7000, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
@@ -445,7 +447,6 @@ void monitorCycleTime(){
     c_day = ptm->tm_mday;
     c_month = ptm->tm_mon+1;
     c_year = ptm->tm_year+1900;
-    Serial.println(timestamp);
     
     sendData=false;
     lastActivity=millis();  
@@ -453,9 +454,6 @@ void monitorCycleTime(){
   
 }
 
-
-
- 
 void loop() {
   ArduinoOTA.handle();
   timeClient.update();
@@ -497,5 +495,4 @@ void loop() {
     webSocket.sendTXT(JSON_Data);
     sendws = false;
   }
-  
 }
