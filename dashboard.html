@@ -3,7 +3,7 @@
    <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Desktop</title>
+      <title>Dashboard</title>
       <script>
         var socket = new WebSocket("ws://192.168.1.130:7000");
         socket.onmessage  = 
@@ -23,7 +23,7 @@
           var min_data = data.min;
           var sec_data = data.sec;
 
-          if (inj_data == 1){
+          if (inj_data == 1){ // take the timestamp when inject
             document.getElementById("day_value").innerHTML = day_data;
             document.getElementById("mon_value").innerHTML = mon_data;
             document.getElementById("year_value").innerHTML = year_data;
