@@ -24,7 +24,7 @@ void(* resetFunc) (void) = 0; //declare reset function @ address 0
 char buff[64];
 char versi[6]="1.0.0"; // System Version
 String versionNum="1.0.0"; // System Version
-char mcid[8]="1000078"; // A_Asset_ID or Machine ID API 78 
+char mcid[8]="1000076"; // A_Asset_ID or Machine ID API 78 
 
 #define  pinTemp D5           //Get Temp Data
 #define  pinClam D6           //Clamp Process
@@ -94,41 +94,165 @@ char html_template[] PROGMEM = R"=====(
    <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Socket Example</title>
+      <title>Dashboard</title>
       <script>
-        var socket = new WebSocket("ws:/" + "/192.168.1.132:7000");
-        socket.onmessage  = function(myFunction) {  
-                              var full_data = myFunction.data;
-                              console.log(full_data);
-                              var data = JSON.parse(full_data);
-                              id_data = data.id;
-                              cla_data = data.cla;
-                              inj_data = data.inj;
-                              cyc_data = data.cyc;
-                              pro_data = data.shut;
-                              if(cla_data == 0){
-                                cla_data = "OFF";
-                              }else{
-                                cla_data = "ON";
-                              }
-                              if(inj_data == 0){
-                                inj_data = "OFF";
-                              }else{
-                                inj_data = "ON";
-                              }
-                              document.getElementById("id_value").innerHTML = id_data;
-                              document.getElementById("cla_value").innerHTML = cla_data;
-                              document.getElementById("inj_value").innerHTML = inj_data;
-                              document.getElementById("cyc_value").innerHTML = cyc_data;
-                              document.getElementById("shut_value").innerHTML = shut_data;
-                            };
+        var socket = new WebSocket("ws://192.168.1.130:7000");
+        socket.onmessage  = 
+        function(event) {  
+          var full_data = event.data;
+          console.log(full_data);
+          var data = JSON.parse(full_data);
+          var id_data = data.id;
+          var cla_data = data.cla;
+          var inj_data = data.inj;
+          var cyc_data = data.cyc;
+          var shut_data = data.shut;
+          var day_data = data.day;
+          var mon_data = data.mon;
+          var year_data = data.year;
+          var hour_data = data.hour;
+          var min_data = data.min;
+          var sec_data = data.sec;
+
+          if (inj_data == 1){ // take the timestamp when inject
+            document.getElementById("day_value").innerHTML = day_data;
+            document.getElementById("mon_value").innerHTML = mon_data;
+            document.getElementById("year_value").innerHTML = year_data;
+            document.getElementById("hour_value").innerHTML = hour_data;
+            document.getElementById("min_value").innerHTML = min_data;
+            document.getElementById("sec_value").innerHTML = sec_data;
+          }
+
+          if(cla_data == 0){
+            cla_data = "OFF";
+            cla_data = cla_data.fontcolor("red");
+          }else{
+            cla_data = "ON";
+            cla_data = cla_data.fontcolor("green");
+          }
+          if(inj_data == 0){
+            inj_data = "OFF";
+            inj_data = inj_data.fontcolor("red");
+          }else{
+            inj_data = "ON";
+            inj_data = inj_data.fontcolor("green");
+          }
+
+          document.getElementById("id_value").innerHTML = id_data;
+          document.getElementById("cla_value").innerHTML = cla_data;
+          document.getElementById("inj_value").innerHTML = inj_data;
+          document.getElementById("cyc_value").innerHTML = cyc_data;
+          document.getElementById("shut_value").innerHTML = shut_data;
+          
+        };
       </script>
+      <style>
+        .box {
+          width: 350px;
+          height: 250px;
+          position: relative;
+          border-radius: 10px;
+          margin: 10px;
+          text-align: center;
+          font-size: 18px;
+        }
+        .cycle {
+          width: 175px;
+          height: 187.5px;
+          background: green;
+          position: absolute;
+          border-radius: 10px 0px 0px 0px;
+        }
+        .cyctext {
+          font-weight: bold;
+          font-size: 56px;
+          text-align: center;
+          margin-top: 25%;
+        }
+        .clamp {
+          width: 87.5px;
+          height: 62.5px;
+          background: blue;
+          position: absolute;
+          margin-top: 187px;
+          border-radius: 0px 0px 0px 10px;
+        }
+        .inject {
+          width: 87.5px;
+          height: 62.5px;
+          background: violet;
+          position: absolute;
+          margin-top: 187px;
+          margin-left: 25%;
+        }
+        .onoff {
+          font-weight: bold;
+          font-size: 20px;
+          text-align: center;
+          margin-top: 5px;
+        }
+        .shut {
+          width: 175px;
+          height: 115px;
+          background: yellow;
+          position: absolute;
+          margin-left: 50%;
+          border-radius: 0px 10px 0px 0px;
+        }
+        .shutext {
+          font-weight: bold;
+          font-size: 56px;
+          text-align: center;
+          margin-top: 10px;
+        }
+        .time {
+          width: 175px;
+          height: 72.5px;
+          background: orange;
+          position: absolute;
+          margin-left: 50%;
+          margin-top: 115px;
+        }
+        .idbox {
+          width: 175px;
+          height: 62.5px;
+          background: blueviolet;
+          position: absolute;
+          margin-left: 50%;
+          margin-top: 187px;
+          border-radius: 0px 0px 10px 0px;
+        }
+      </style>
    </head>
    <body>
-      <p>id:</p><p id="id_value"></p>
-      <p>Clamp:</p><p id="cla_value">OFF</p>
-      <p>Inject:</p><p id="inj_value">OFF</p>
-      <p>Cycle:</p><p id="cyc_value"></p>
+      <div class="box">
+
+        <div class="cycle">
+          Last Cycle Duration:<div class="cyctext" id="cyc_value"></div>
+        </div>
+
+        <div class="clamp">
+          Clamp:<div class="onoff" id="cla_value">OFF</div>
+        </div>
+
+        <div class="inject">
+          Inject:<div class="onoff" id="inj_value">OFF</div>
+        </div>
+
+        <div class="shut">
+          Shut:<div class="shutext" id="shut_value"></div>
+        </div>
+        <div class="time">
+          Last Cycle On:<br>
+          <span id="day_value">0</span>/<span id="mon_value">0</span>/<span id="year_value">0</span><br>
+          <span id="hour_value">0</span>:<span id="min_value">0</span>:<span id="sec_value">0</span>
+        </div>
+        <div class="idbox">
+          ID:<br>
+          <span id="id_value"></span>
+        </div>
+
+      </div>
    </body>
 </html>
 )=====";
@@ -168,6 +292,13 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
  
 }
 
+void handleMain() {
+  server.send_P(200, "text/html", html_template ); 
+}
+void handleNotFound() {
+  server.send(404,   "text/html", "<html><body><p>404 Error</p></body></html>" );
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -177,21 +308,8 @@ void setup() {
         delay(1000);
     }
     
-  wifiManager.autoConnect("esp8266-dc9c95"); // AP esp if can't connect to wifi (each board please make it different)
+  wifiManager.autoConnect("esp8266-0de890"); // AP esp if can't connect to wifi (each board please make it different)
   Serial.println("Connected..");
-  
-    
-  //setup Wifi Port
-  //WiFiMulti.addAP("API-HOTSPOT", "nevergiveup");
-  /*
-  WiFi.begin(ssid, password);
-  delay(2000);
-  
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  */
 
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());
@@ -200,7 +318,7 @@ void setup() {
   server.onNotFound(handleNotFound);
   server.begin();
 
-  webSocket.begin("192.168.1.130", 7000, "/");
+  webSocket.begin("192.168.1.130", 7000, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
@@ -315,44 +433,27 @@ void monitorCycleTime(){
     laststateInject=stateInject;   
   }
   
-/*
-  if (stateInject==HIGH){
-    digitalWrite(LED_BUILTIN, HIGH);
-  }
-  else {
-    digitalWrite(LED_BUILTIN, LOW); 
-  }
-*/
   if(sendData == true){
-    //sprintf(str_ct,"%d",cycleTime);
     numct = cycleTime;
+    Serial.println(numct);
 
     time_t epochTime = timeClient.getEpochTime();
     c_hour = timeClient.getHours();
     c_minute = timeClient.getMinutes();
     c_second = timeClient.getSeconds();
-    //String formattedtime = timeClient.getFormattedTime();
     struct tm *ptm = gmtime ((time_t *)&epochTime);
     c_day = ptm->tm_mday;
     c_month = ptm->tm_mon+1;
     c_year = ptm->tm_year+1900;
-    //String currentDate = String(currentYear) + "" + String(currentMonth) + "" + String(monthDay);
-    //timestamp = currentDate + "" + formattedtime;
     Serial.println(timestamp);
     
-    Serial.println(numct);
     sendData=false;
     lastActivity=millis();  
   }
   
 }
 
-void handleMain() {
-  server.send_P(200, "text/html", html_template ); 
-}
-void handleNotFound() {
-  server.send(404,   "text/html", "<html><body><p>404 Error</p></body></html>" );
-}
+
 
  
 void loop() {
