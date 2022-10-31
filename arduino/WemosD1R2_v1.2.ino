@@ -19,12 +19,7 @@
  * @Author: Abraham Sulaeman- 19 Mei 2022
  */
  
-void(* resetFunc) (void) = 0; //declare reset function @ address 0
-
-char buff[64];
-char versi[6]="1.0.0"; // System Version
-String versionNum="1.0.0"; // System Version
-char mcid[8]="1000077"; // A_Asset_ID or Machine ID API 78 
+void(* resetFunc) (void) = 0; //declare reset function @ address 0 
 
 #define  pinTemp D5           //Get Temp Data
 #define  pinClam D6           //Clamp Process
@@ -49,9 +44,6 @@ WiFiManager wifiManager;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
-//const char *ssid     = "API-HOTSPOT";
-//const char *password = "nevergiveup";
-
 // process state
 int stateClamp = 0;         // clam process started
 int stateInject = 0;         // inject process started 
@@ -60,6 +52,11 @@ unsigned long lastInject;
 
 int laststateInject = 0,laststateClamp = 0;     // previous state of the button
 boolean semiAuto=false; // True: Single Sensor for Clam and Injection
+
+char buff[64];
+char versi[6]="1.0.0"; // System Version
+String versionNum="1.0.0"; // System Version
+char mcid[8]="1000077"; // A_Asset_ID or Machine ID API 78
 
 unsigned long timenow;
 unsigned long lastTime;
@@ -77,7 +74,8 @@ int timerSensor=0;  // sensor update per 2 detik
 int numct, staInj, staCla, shut;
 int c_day, c_month, c_year;
 int c_hour, c_minute, c_second;
-String JSON_Data, WS_address = "192.168.1.130";
+String WS_address = "192.168.#.###"; // Websocket server address
+String JSON_Data;
 boolean sendws = false, wifiConnected = true, sendData = false, connected = false;
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
@@ -96,7 +94,7 @@ char html_template[] PROGMEM = R"=====(
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Dashboard</title>
       <script>
-        var socket = new WebSocket("ws://192.168.1.130:7000");
+        var socket = new WebSocket("ws://192.168.#.###:7000");
         socket.onmessage  = 
         function(event) {  
           var full_data = event.data;
@@ -104,7 +102,7 @@ char html_template[] PROGMEM = R"=====(
           var data = JSON.parse(full_data);
           var id_data = data.id;
 
-          if(id_data == 1000077){
+          if(id_data == #######){  // machine id
             var cla_data = data.cla;
             var inj_data = data.inj;
             var cyc_data = data.cyc;
@@ -310,7 +308,8 @@ void setup() {
         delay(1000);
     }
     
-  wifiManager.autoConnect("esp8266-93430c"); // AP esp if can't connect to wifi (each board please make it different)
+  // AP esp if can't connect to wifi (each board mac)  
+  wifiManager.autoConnect("esp8266-######");
   Serial.println("Connected..");
 
   Serial.print("Local IP: ");
@@ -476,6 +475,7 @@ void loop() {
     JSON_Data += numct;
     JSON_Data += ",\"shut\":";
     JSON_Data += shut;
+    
     JSON_Data += ",\"day\":";
     JSON_Data += c_day;
     JSON_Data += ",\"mon\":";
