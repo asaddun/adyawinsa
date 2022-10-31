@@ -394,17 +394,13 @@ void monitorCycleTime(){
   }
 
   if (stateClamp != laststateClamp){
-    if (stateClamp == HIGH){
+    if (stateClamp == HIGH){ // Clamp = ON
       lastClamp = millis(); 
-      //Serial.println("State CLAMP=ON");
       staCla = 1;
-      Serial.println("1,0");
       sendws = true;
     } 
-    else {
-      //Serial.println("State CLAMP=OFF");
+    else {                   // Clamp = OFF
       staCla = 0;
-      Serial.println("0,0");
       sendws = true;
     }
     laststateClamp = stateClamp;
@@ -412,8 +408,7 @@ void monitorCycleTime(){
   if (stateClamp == HIGH) {
     stateInject = digitalRead(pinInject);
     if (stateInject != laststateInject){
-      if (stateInject == HIGH){
-        //Serial.println("State INJECT=ON");
+      if (stateInject == HIGH){   // Inject = ON
         staInj = 1;
         shut += 1;
         Serial.println("1,1,");
@@ -428,8 +423,7 @@ void monitorCycleTime(){
           sendData=false;
         }
       } 
-      else {
-        //Serial.println("State INJECT=OFF");
+      else {                      // Inject = OFF
         staInj = 0;
         Serial.println("1,0");
         sendws = true; 
@@ -442,6 +436,7 @@ void monitorCycleTime(){
     numct = cycleTime;
     Serial.println(numct);
 
+    // NTP get data
     time_t epochTime = timeClient.getEpochTime();
     c_hour = timeClient.getHours();
     c_minute = timeClient.getMinutes();
@@ -461,12 +456,15 @@ void loop() {
   ArduinoOTA.handle();
   timeClient.update();
   webSocket.loop();
+
+  // If disconnected from websocket will try reconnect every 5 seconds
   webSocket.setReconnectInterval(5000);
   
   server.handleClient();
   
   monitorCycleTime();
 
+  // send data to websocket as JSON format
   if (sendws == true){
     JSON_Data = "{";
     JSON_Data += "\"id\":";
