@@ -11,18 +11,19 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 840,
-        "y": 80,
+        "x": 1600,
+        "y": 180,
         "wires": []
     },
     {
         "id": "fa564eb314da88e4",
         "type": "mysql",
         "z": "6e29ed9e7ed7f280",
+        "d": true,
         "mydb": "7a91416b93f39491",
         "name": "",
-        "x": 690,
-        "y": 80,
+        "x": 1450,
+        "y": 180,
         "wires": [
             [
                 "ee4bc3d7a440f5c0"
@@ -56,8 +57,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 280,
+        "x": 1100,
+        "y": 320,
         "wires": []
     },
     {
@@ -81,23 +82,42 @@
         "type": "function",
         "z": "6e29ed9e7ed7f280",
         "name": "parseJSON",
-        "func": "var data = msg.payload;\nvar id = { payload: data.id };\nvar inj = { payload: data.inj };\nvar cyc = { payload: data.cyc };\nreturn [id, inj, cyc];",
-        "outputs": 3,
+        "func": "var data = msg.payload;\nvar id = { payload: data.id };\nvar inj = { payload: data.inj };\nvar cyc = { payload: data.cyc };\nvar day = { payload: data.day };\nvar mon = { payload: data.mon };\nvar year = { payload: data.year };\nvar hour = { payload: data.hour };\nvar min = { payload: data.min };\nvar sec = { payload: data.sec };\nreturn [id, inj, cyc, day, mon, year, hour, min, sec];",
+        "outputs": 9,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
         "x": 110,
-        "y": 180,
+        "y": 240,
         "wires": [
             [
                 "6e4ebb54ae4c5583"
             ],
             [
-                "6f69714592d5b2d1"
+                "6f69714592d5b2d1",
+                "4b5cbb36a252b379"
             ],
             [
                 "6f69714592d5b2d1"
+            ],
+            [
+                "8a1219f966987e2e"
+            ],
+            [
+                "9c35a12d73b9b892"
+            ],
+            [
+                "a6994b56226d5086"
+            ],
+            [
+                "1caf1e97cd8e18fa"
+            ],
+            [
+                "42eb1bd71d5ff62d"
+            ],
+            [
+                "b99c813ae92ece08"
             ]
         ]
     },
@@ -115,18 +135,17 @@
         "joinerType": "str",
         "accumulate": false,
         "timeout": "",
-        "count": "2",
+        "count": "3",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
         "reduceInitType": "num",
         "reduceFixup": "",
-        "x": 670,
-        "y": 160,
+        "x": 1110,
+        "y": 180,
         "wires": [
             [
-                "d82a604c9bdc1f1d",
-                "0154c26c78122a08"
+                "d82a604c9bdc1f1d"
             ]
         ]
     },
@@ -141,8 +160,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 520,
-        "y": 80,
+        "x": 1280,
+        "y": 180,
         "wires": [
             [
                 "fa564eb314da88e4"
@@ -160,8 +179,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 480,
-        "y": 160,
+        "x": 920,
+        "y": 120,
         "wires": [
             [
                 "e11e932aa72e49b5"
@@ -179,8 +198,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 480,
-        "y": 200,
+        "x": 920,
+        "y": 160,
         "wires": [
             [
                 "e11e932aa72e49b5"
@@ -204,11 +223,270 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 300,
-        "y": 200,
+        "x": 760,
+        "y": 160,
         "wires": [
             [
                 "8530ba851c588585"
+            ]
+        ]
+    },
+    {
+        "id": "8a1219f966987e2e",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "set topic",
+        "func": "msg.topic = \"day\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 260,
+        "wires": [
+            [
+                "1bce92643acf2249"
+            ]
+        ]
+    },
+    {
+        "id": "9c35a12d73b9b892",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "set topic",
+        "func": "msg.topic = \"mon\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 300,
+        "wires": [
+            [
+                "1bce92643acf2249"
+            ]
+        ]
+    },
+    {
+        "id": "a6994b56226d5086",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "set topic",
+        "func": "msg.topic = \"year\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 340,
+        "wires": [
+            [
+                "1bce92643acf2249"
+            ]
+        ]
+    },
+    {
+        "id": "1caf1e97cd8e18fa",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "set topic",
+        "func": "msg.topic = \"hour\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 380,
+        "wires": [
+            [
+                "2d61b5ac0981981c"
+            ]
+        ]
+    },
+    {
+        "id": "42eb1bd71d5ff62d",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "set topic",
+        "func": "msg.topic = \"min\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 420,
+        "wires": [
+            [
+                "2d61b5ac0981981c"
+            ]
+        ]
+    },
+    {
+        "id": "b99c813ae92ece08",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "set topic",
+        "func": "msg.topic = \"sec\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 460,
+        "wires": [
+            [
+                "2d61b5ac0981981c"
+            ]
+        ]
+    },
+    {
+        "id": "1bce92643acf2249",
+        "type": "join",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "mode": "custom",
+        "build": "string",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "/",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "3",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "num",
+        "reduceFixup": "",
+        "x": 510,
+        "y": 300,
+        "wires": [
+            [
+                "248957213859e7ee"
+            ]
+        ]
+    },
+    {
+        "id": "2d61b5ac0981981c",
+        "type": "join",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "mode": "custom",
+        "build": "string",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": ":",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "3",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "num",
+        "reduceFixup": "",
+        "x": 510,
+        "y": 380,
+        "wires": [
+            [
+                "248957213859e7ee"
+            ]
+        ]
+    },
+    {
+        "id": "248957213859e7ee",
+        "type": "join",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "mode": "custom",
+        "build": "string",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": " ",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "num",
+        "reduceFixup": "",
+        "x": 630,
+        "y": 340,
+        "wires": [
+            [
+                "bed831ee91050c05",
+                "afd4cbaedd17acd8"
+            ]
+        ]
+    },
+    {
+        "id": "bed831ee91050c05",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "set topic",
+        "func": "msg.topic = \"time\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 300,
+        "wires": [
+            [
+                "4b5cbb36a252b379"
+            ]
+        ]
+    },
+    {
+        "id": "afd4cbaedd17acd8",
+        "type": "debug",
+        "z": "6e29ed9e7ed7f280",
+        "name": "debug 6",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "4b5cbb36a252b379",
+        "type": "trigger",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "op1": "",
+        "op2": "0",
+        "op1type": "pay",
+        "op2type": "str",
+        "duration": "0",
+        "extend": false,
+        "overrideDelay": false,
+        "units": "ms",
+        "reset": "1",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 940,
+        "y": 220,
+        "wires": [
+            [
+                "e11e932aa72e49b5"
             ]
         ]
     },
@@ -225,7 +503,7 @@
     {
         "id": "822e26e97ced72dc",
         "type": "websocket-listener",
-        "path": "ws://192.168.1.130:7000/",
+        "path": "ws://192.168.10.26:7000/",
         "wholemsg": "false"
     }
 ]
