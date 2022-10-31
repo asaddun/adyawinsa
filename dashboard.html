@@ -5,14 +5,13 @@
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Dashboard</title>
       <script>
-        var socket = new WebSocket("ws://192.168.1.130:7000");
+        var socket = new WebSocket("ws://192.168.10.26:7000");
         socket.onmessage  = 
         function(event) {  
           var full_data = event.data;
           console.log(full_data);
           var data = JSON.parse(full_data);
           var id_data = data.id;
-
           var cla_data = data.cla;
           var inj_data = data.inj;
           var cyc_data = data.cyc;
@@ -53,8 +52,6 @@
           document.getElementById("inj_value").innerHTML = inj_data;
           document.getElementById("cyc_value").innerHTML = cyc_data;
           document.getElementById("shut_value").innerHTML = shut_data;
-        
-          
         };
       </script>
       <style>
