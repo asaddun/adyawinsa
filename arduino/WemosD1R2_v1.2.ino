@@ -394,12 +394,12 @@ void monitorCycleTime(){
   }
 
   if (stateClamp != laststateClamp){
-    if (stateClamp == HIGH){ // Clamp = ON
+    if (stateClamp == HIGH){      // Clamp = ON
       lastClamp = millis(); 
       staCla = 1;
       sendws = true;
     } 
-    else {                   // Clamp = OFF
+    else {                        // Clamp = OFF
       staCla = 0;
       sendws = true;
     }
