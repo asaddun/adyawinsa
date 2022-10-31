@@ -307,7 +307,8 @@ void setup() {
         Serial.flush();
         delay(1000);
     }
-    
+  
+  // Wifi Manager Setup
   // AP esp if can't connect to wifi (each board mac)  
   wifiManager.autoConnect("esp8266-######");
   Serial.println("Connected..");
@@ -315,16 +316,18 @@ void setup() {
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());
   
+  // Webserver Setup
   server.on("/", handleMain);
   server.onNotFound(handleNotFound);
   server.begin();
 
+  // Websocket Setup
   webSocket.begin(WS_address, 7000, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
+  // OTA Setup
   ArduinoOTA.setPassword("1234");
-
   ArduinoOTA.onStart([]() {
     Serial.println("Start");
   });
@@ -344,6 +347,7 @@ void setup() {
   });
   ArduinoOTA.begin();
 
+  // NTP Setup
   timeClient.begin();
   timeClient.setTimeOffset(25200); // GMT +7 (60(sec) * 60(min) * 7(hour))
   
