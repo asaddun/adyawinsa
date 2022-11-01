@@ -349,7 +349,7 @@ void setup() {
 
   // NTP Setup
   timeClient.begin();
-  timeClient.setTimeOffset(25200); // GMT +7 (60(sec) * 60(min) * 7(hour))
+  timeClient.setTimeOffset(25195); // GMT +7 (60(sec) * 60(min) * 7(hour))
   
   delay(500);
   String versiSW = "ARDUINO: setup rest v";
