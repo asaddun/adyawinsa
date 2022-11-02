@@ -309,6 +309,7 @@ void setup() {
     }
   
   // Wifi Manager Setup
+  // wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
   wifiManager.autoConnect("esp8266-######");
   Serial.println("Connected..");
