@@ -11,7 +11,7 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1600,
+        "x": 1340,
         "y": 180,
         "wires": []
     },
@@ -22,7 +22,7 @@
         "d": true,
         "mydb": "7a91416b93f39491",
         "name": "",
-        "x": 1450,
+        "x": 1150,
         "y": 180,
         "wires": [
             [
@@ -57,8 +57,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1100,
-        "y": 320,
+        "x": 980,
+        "y": 240,
         "wires": []
     },
     {
@@ -82,8 +82,8 @@
         "type": "function",
         "z": "6e29ed9e7ed7f280",
         "name": "parseJSON",
-        "func": "var data = msg.payload;\nvar id = { payload: data.id };\nvar inj = { payload: data.inj };\nvar cyc = { payload: data.cyc };\nvar day = { payload: data.day };\nvar mon = { payload: data.mon };\nvar year = { payload: data.year };\nvar hour = { payload: data.hour };\nvar min = { payload: data.min };\nvar sec = { payload: data.sec };\nreturn [id, inj, cyc, day, mon, year, hour, min, sec];",
-        "outputs": 9,
+        "func": "var data = msg.payload;\nvar inj = { payload: data.inj };\nvar id = { payload: data.id };\nvar cyc = { payload: data.cyc };\nvar shoot = { payload: data.shoot };\nvar day = { payload: data.day };\nvar mon = { payload: data.mon };\nvar year = { payload: data.year };\nvar hour = { payload: data.hour };\nvar min = { payload: data.min };\nvar sec = { payload: data.sec };\nreturn [inj, id, cyc, shoot, day, mon, year, hour, min, sec];",
+        "outputs": 10,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
@@ -92,14 +92,18 @@
         "y": 240,
         "wires": [
             [
+                "6f69714592d5b2d1",
+                "4b5cbb36a252b379",
+                "6a2e39166ea7c666"
+            ],
+            [
                 "6e4ebb54ae4c5583"
             ],
             [
-                "6f69714592d5b2d1",
-                "4b5cbb36a252b379"
+                "3d5680a0d0773b64"
             ],
             [
-                "6f69714592d5b2d1"
+                "3c48dd694dd1447b"
             ],
             [
                 "8a1219f966987e2e"
@@ -135,17 +139,18 @@
         "joinerType": "str",
         "accumulate": false,
         "timeout": "",
-        "count": "3",
+        "count": "4",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
         "reduceInitType": "num",
         "reduceFixup": "",
-        "x": 1110,
+        "x": 810,
         "y": 180,
         "wires": [
             [
-                "d82a604c9bdc1f1d"
+                "d82a604c9bdc1f1d",
+                "0154c26c78122a08"
             ]
         ]
     },
@@ -154,13 +159,13 @@
         "type": "function",
         "z": "6e29ed9e7ed7f280",
         "name": "sendDB",
-        "func": "msg.topic = \"INSERT INTO nodered(mc_id, last_cycle_duration)\" + \"VALUES('\" + msg.payload.id + \"','\" + msg.payload.cyc + \"')\";\nreturn msg;",
+        "func": "msg.topic = \"INSERT INTO nodered(mc_id, last_cycle_duration, timestamp)\" + \n            \"VALUES('\" + msg.payload.id + \"','\" + msg.payload.cyc + \"','\" + msg.payload.time + \"')\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1280,
+        "x": 980,
         "y": 180,
         "wires": [
             [
@@ -172,33 +177,14 @@
         "id": "6e4ebb54ae4c5583",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
+        "name": "id",
         "func": "msg.topic = \"id\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 920,
-        "y": 120,
-        "wires": [
-            [
-                "e11e932aa72e49b5"
-            ]
-        ]
-    },
-    {
-        "id": "8530ba851c588585",
-        "type": "function",
-        "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
-        "func": "msg.topic = \"cyc\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 920,
+        "x": 310,
         "y": 160,
         "wires": [
             [
@@ -223,11 +209,11 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 760,
-        "y": 160,
+        "x": 520,
+        "y": 200,
         "wires": [
             [
-                "8530ba851c588585"
+                "e11e932aa72e49b5"
             ]
         ]
     },
@@ -235,15 +221,15 @@
         "id": "8a1219f966987e2e",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
+        "name": "day",
         "func": "msg.topic = \"day\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 260,
+        "x": 310,
+        "y": 280,
         "wires": [
             [
                 "1bce92643acf2249"
@@ -254,15 +240,15 @@
         "id": "9c35a12d73b9b892",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
+        "name": "mon",
         "func": "msg.topic = \"mon\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 300,
+        "x": 310,
+        "y": 320,
         "wires": [
             [
                 "1bce92643acf2249"
@@ -273,15 +259,15 @@
         "id": "a6994b56226d5086",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
+        "name": "year",
         "func": "msg.topic = \"year\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 340,
+        "x": 310,
+        "y": 360,
         "wires": [
             [
                 "1bce92643acf2249"
@@ -292,15 +278,15 @@
         "id": "1caf1e97cd8e18fa",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
+        "name": "hour",
         "func": "msg.topic = \"hour\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 380,
+        "x": 310,
+        "y": 400,
         "wires": [
             [
                 "2d61b5ac0981981c"
@@ -311,15 +297,15 @@
         "id": "42eb1bd71d5ff62d",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
+        "name": "min",
         "func": "msg.topic = \"min\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 420,
+        "x": 310,
+        "y": 440,
         "wires": [
             [
                 "2d61b5ac0981981c"
@@ -330,15 +316,15 @@
         "id": "b99c813ae92ece08",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
+        "name": "sec",
         "func": "msg.topic = \"sec\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 460,
+        "x": 310,
+        "y": 480,
         "wires": [
             [
                 "2d61b5ac0981981c"
@@ -365,8 +351,8 @@
         "reduceInit": "",
         "reduceInitType": "num",
         "reduceFixup": "",
-        "x": 510,
-        "y": 300,
+        "x": 490,
+        "y": 420,
         "wires": [
             [
                 "248957213859e7ee"
@@ -393,8 +379,8 @@
         "reduceInit": "",
         "reduceInitType": "num",
         "reduceFixup": "",
-        "x": 510,
-        "y": 380,
+        "x": 490,
+        "y": 460,
         "wires": [
             [
                 "248957213859e7ee"
@@ -422,7 +408,7 @@
         "reduceInitType": "num",
         "reduceFixup": "",
         "x": 630,
-        "y": 340,
+        "y": 440,
         "wires": [
             [
                 "bed831ee91050c05",
@@ -434,15 +420,15 @@
         "id": "bed831ee91050c05",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
-        "name": "set topic",
+        "name": "time",
         "func": "msg.topic = \"time\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
-        "y": 300,
+        "x": 630,
+        "y": 380,
         "wires": [
             [
                 "4b5cbb36a252b379"
@@ -461,8 +447,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 780,
-        "y": 380,
+        "x": 820,
+        "y": 440,
         "wires": []
     },
     {
@@ -482,11 +468,74 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 940,
-        "y": 220,
+        "x": 520,
+        "y": 280,
         "wires": [
             [
                 "e11e932aa72e49b5"
+            ]
+        ]
+    },
+    {
+        "id": "3c48dd694dd1447b",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "shoot",
+        "func": "msg.topic = \"shoot\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 240,
+        "wires": [
+            [
+                "6a2e39166ea7c666"
+            ]
+        ]
+    },
+    {
+        "id": "6a2e39166ea7c666",
+        "type": "trigger",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "op1": "",
+        "op2": "0",
+        "op1type": "pay",
+        "op2type": "str",
+        "duration": "0",
+        "extend": false,
+        "overrideDelay": false,
+        "units": "ms",
+        "reset": "1",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 520,
+        "y": 240,
+        "wires": [
+            [
+                "e11e932aa72e49b5"
+            ]
+        ]
+    },
+    {
+        "id": "3d5680a0d0773b64",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "cyc",
+        "func": "msg.topic = \"cyc\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 200,
+        "wires": [
+            [
+                "6f69714592d5b2d1"
             ]
         ]
     },
@@ -503,7 +552,7 @@
     {
         "id": "822e26e97ced72dc",
         "type": "websocket-listener",
-        "path": "ws://192.168.10.26:7000/",
+        "path": "ws://192.168.100.3:7000/",
         "wholemsg": "false"
     }
 ]
