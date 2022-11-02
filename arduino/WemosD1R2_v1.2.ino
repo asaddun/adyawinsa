@@ -71,7 +71,7 @@ int pumpState = 0;     // previous state of the button
 char heaterON[2]="0"; // Heater State
 char pumpON[2]="0"; // Pump State
 int timerSensor=0;  // sensor update per 2 detik
-int numct, staInj, staCla, shut;
+int numct, staInj, staCla, shoot;
 int c_day, c_month, c_year;
 int c_hour, c_minute, c_second;
 String WS_address = "192.168.#.###"; // Websocket server address
@@ -106,7 +106,7 @@ char html_template[] PROGMEM = R"=====(
             var cla_data = data.cla;
             var inj_data = data.inj;
             var cyc_data = data.cyc;
-            var shut_data = data.shut;
+            var shoot_data = data.shoot;
             var day_data = data.day;
             var mon_data = data.mon;
             var year_data = data.year;
@@ -142,7 +142,7 @@ char html_template[] PROGMEM = R"=====(
             document.getElementById("cla_value").innerHTML = cla_data;
             document.getElementById("inj_value").innerHTML = inj_data;
             document.getElementById("cyc_value").innerHTML = cyc_data;
-            document.getElementById("shut_value").innerHTML = shut_data;
+            document.getElementById("shoot_value").innerHTML = shoot_data;
           }
         };
       </script>
@@ -191,7 +191,7 @@ char html_template[] PROGMEM = R"=====(
           text-align: center;
           margin-top: 5px;
         }
-        .shut {
+        .shoot {
           width: 175px;
           height: 115px;
           background: yellow;
@@ -199,7 +199,7 @@ char html_template[] PROGMEM = R"=====(
           margin-left: 50%;
           border-radius: 0px 10px 0px 0px;
         }
-        .shutext {
+        .shootext {
           font-weight: bold;
           font-size: 56px;
           text-align: center;
@@ -239,8 +239,8 @@ char html_template[] PROGMEM = R"=====(
           Inject:<div class="onoff" id="inj_value">OFF</div>
         </div>
 
-        <div class="shut">
-          Shut:<div class="shutext" id="shut_value"></div>
+        <div class="shoot">
+          Shoot:<div class="shootext" id="shoot_value"></div>
         </div>
         <div class="time">
           Last Cycle On:<br>
@@ -410,7 +410,7 @@ void monitorCycleTime(){
     if (stateInject != laststateInject){
       if (stateInject == HIGH){   // Inject = ON
         staInj = 1;
-        shut += 1;
+        shoot += 1;
         // Serial.println("1,1,");
         sendws = true;
         timenow=millis();
@@ -473,8 +473,8 @@ void loop() {
     JSON_Data += staInj;
     JSON_Data += ",\"cyc\":";
     JSON_Data += numct;
-    JSON_Data += ",\"shut\":";
-    JSON_Data += shut;
+    JSON_Data += ",\"shoot\":";
+    JSON_Data += shoot;
     
     JSON_Data += ",\"day\":";
     JSON_Data += c_day;
