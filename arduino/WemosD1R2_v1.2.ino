@@ -81,7 +81,7 @@ boolean sendws = false, wifiConnected = true, sendData = false, connected = fals
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
 boolean helpNotification=false;
 char helpON[2]="0"; // Help State
-int helpBlink=0; 
+int helpBlink=0;
 char response[64];
 int sensorUpdated=0;
 
@@ -289,7 +289,6 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
                         Serial.printf("[WSc] get pong\n");
                         break;
     }
- 
 }
 
 void handleMain() {
@@ -367,14 +366,14 @@ void setup() {
 
   //By Pass Clam using  Jumper on PIN Clam
   //Semi Auto Machine : By Pass piClam (always ON) used for New Machine (HAITIAN) 
-  stateClamp = digitalRead(pinClam); 
+  stateClamp = digitalRead(pinClam);
   semiAuto=false;
   if (stateClamp==HIGH){
     semiAuto=true;
   }
   // Init First Run
-  lastInject = millis(); 
-  lastClamp = lastInject; 
+  lastInject = millis();
+  lastClamp = lastInject;
 }
 
 void monitorCycleTime(){
@@ -396,10 +395,10 @@ void monitorCycleTime(){
 
   if (stateClamp != laststateClamp){
     if (stateClamp == HIGH){      // Clamp = ON
-      lastClamp = millis(); 
+      lastClamp = millis();
       staCla = 1;
       sendws = true;
-    } 
+    }
     else {                        // Clamp = OFF
       staCla = 0;
       sendws = true;
@@ -412,7 +411,7 @@ void monitorCycleTime(){
       if (stateInject == HIGH){   // Inject = ON
         staInj = 1;
         shut += 1;
-        Serial.println("1,1,");
+        // Serial.println("1,1,");
         sendws = true;
         timenow=millis();
         cycleTime=(timenow-lastInject)/1000;
@@ -423,19 +422,19 @@ void monitorCycleTime(){
         else{
           sendData=false;
         }
-      } 
+      }
       else {                      // Inject = OFF
         staInj = 0;
-        Serial.println("1,0");
-        sendws = true; 
+        // Serial.println("1,0");
+        sendws = true;
       }
-    }   
-    laststateInject=stateInject;   
+    }
+    laststateInject=stateInject;
   }
   
   if(sendData == true){
     numct = cycleTime;
-    Serial.println(numct);
+    // Serial.println(numct);
 
     // NTP get data
     time_t epochTime = timeClient.getEpochTime();
@@ -448,9 +447,8 @@ void monitorCycleTime(){
     c_year = ptm->tm_year+1900;
     
     sendData=false;
-    lastActivity=millis();  
+    lastActivity=millis();
   }
-  
 }
 
 void loop() {
