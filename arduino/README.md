@@ -5,5 +5,5 @@ Wemos Report
 1. Websocket Client ✅
 2. WiFi Manager ✅
 3. Network Protocol Time ✅
-4. Over the Air ✅ (but blocked by office's router)
-5. Now each board can show only their own cycle data (from their machine id)
+4. Over the Air ✅ (tapi terblokir dari jaringan kantor)
+5. Tiap board bisa menampilkan hanya cycle data masing-masing (dari machine id mereka)
