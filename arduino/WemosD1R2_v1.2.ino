@@ -456,12 +456,11 @@ void monitorCycleTime(){
 void loop() {
   ArduinoOTA.handle();
   timeClient.update();
+  server.handleClient();
   webSocket.loop();
 
   // If disconnected from websocket will try reconnect every 5 seconds
   webSocket.setReconnectInterval(5000);
-  
-  server.handleClient();
   
   monitorCycleTime();
 
