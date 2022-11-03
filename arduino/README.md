@@ -10,10 +10,10 @@ Wemos Report
 
 Masalah:
 (Opini sendiri) dengan sambungan API-HOTSPOT
-1. Bila board terhubung dengan IP xxx.xxx.1.xxx, board ga bisa nyambung ke websocket server (laptop),
-jadi saat IP board xxx.xxx.10.xxx board bisa nyambung ke websocket server.
-2. Bila IP laptop xxx.xxx.1.xxx dan board juga xxx.xxx.1.xxx, maka tidak bisa melakukan OTA (over the air) dengan board, jika kedua IP selain xxx.xxx.1.xxx maka bisa melakukan OTA.
-3. IP board xxx.xxx.1.xxx maka tidak bisa buka webpage milik board (Webserver), IP xxx.xxx.10.xxx bisa buka webpage
+1. Bila board terhubung dengan IP 192.168.1.xxx, board ga bisa nyambung ke websocket server (laptop),
+jadi saat IP board 192.168.10.xxx board bisa nyambung ke websocket server.
+2. Bila IP laptop 192.168.1.xxx dan board juga 192.168.1.xxx, maka tidak bisa melakukan OTA (over the air) dengan board, jika kedua IP selain 192.168.1.xxx maka bisa melakukan OTA.
+3. IP board 192.168.1.xxx maka tidak bisa buka webpage milik board (Webserver), IP 192.168.10.xxx bisa buka webpage
 milik board (Webserver).
 
 Kemarin coba pake AP sendiri (tidak terhubung internet), OTA bisa dilakukan, Websocket bisa terhubung tapi langsung terputus
