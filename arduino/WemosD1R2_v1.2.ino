@@ -76,7 +76,7 @@ int c_day, c_month, c_year;
 int c_hour, c_minute, c_second;
 String WS_address = "192.168.#.###"; // Websocket server address
 String JSON_Data;
-boolean sendws = false, wifiConnected = true, sendData = false, connected = false;
+boolean sendws = false, wifiConnected = true, sendData = false;
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
 boolean helpNotification=false;
@@ -262,11 +262,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     switch(type) {
         case WStype_DISCONNECTED:
             Serial.printf("[WSc] Disconnected!\n");
-            connected = false;
             break;
         case WStype_CONNECTED: {
             Serial.printf("[WSc] Connected to url: %s\n", payload);
-            connected = true;
  
             // send message to server when Connected
             Serial.println("[WSc] SENT: Connected");
