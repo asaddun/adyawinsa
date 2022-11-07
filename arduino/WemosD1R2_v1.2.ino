@@ -56,7 +56,7 @@ boolean semiAuto=false; // True: Single Sensor for Clam and Injection
 char buff[64];
 char versi[6]="1.0.0"; // System Version
 String versionNum="1.0.0"; // System Version
-char mcid[8]="1000077"; // A_Asset_ID or Machine ID API 78
+char mcid[8]="1000076"; // A_Asset_ID or Machine ID API 78
 
 unsigned long timenow;
 unsigned long lastTime;
@@ -74,7 +74,7 @@ int timerSensor=0;  // sensor update per 2 detik
 int numct, staInj, staCla, shoot;
 int c_day, c_month, c_year;
 int c_hour, c_minute, c_second;
-String WS_address = "192.168.#.###"; // Websocket server address
+String WS_address = "192.168.1.124"; // Websocket server address
 String JSON_Data;
 boolean sendws = false, wifiConnected = true, sendData = false;
 
@@ -94,7 +94,7 @@ char html_template[] PROGMEM = R"=====(
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Dashboard</title>
       <script>
-        var socket = new WebSocket("ws://192.168.#.###:7000");
+        var socket = new WebSocket("ws://192.168.1.124:7000");
         socket.onmessage  = 
         function(event) {  
           var full_data = event.data;
@@ -102,7 +102,7 @@ char html_template[] PROGMEM = R"=====(
           var data = JSON.parse(full_data);
           var id_data = data.id;
 
-          if(id_data == #######){  // machine id
+          if(id_data == 1000078){  // machine id
             var cla_data = data.cla;
             var inj_data = data.inj;
             var cyc_data = data.cyc;
@@ -251,7 +251,6 @@ char html_template[] PROGMEM = R"=====(
           ID:<br>
           <span id="id_value"></span>
         </div>
-
       </div>
    </body>
 </html>
@@ -306,10 +305,15 @@ void setup() {
     }
   
   // Wifi Manager Setup
-  // wifiManager.resetSettings();
+  //wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
-  wifiManager.autoConnect("esp8266-######");
-  Serial.println("Connected..");
+  wifiManager.autoConnect("esp8266-0de890");
+  Serial.println("WiFi Connected..");
+
+  String versiSW = "ARDUINO: setup rest v";
+  versiSW+=versionNum;
+  Serial.println(versiSW);
+  Serial.println(F("ARDUINO: system started"));
 
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());
@@ -320,6 +324,8 @@ void setup() {
   server.begin();
 
   // Websocket Setup
+  Serial.print("[WSc] Try connect to WS server ");
+  Serial.println(WS_address);
   webSocket.begin(WS_address, 7000, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
@@ -347,14 +353,8 @@ void setup() {
 
   // NTP Setup
   timeClient.begin();
-  timeClient.setTimeOffset(25195); // GMT +7 ((60(sec) * 60(min) * 7(hour) - 5 seconds (tolerance, always 5 seconds ahead))
+  timeClient.setTimeOffset(25200); // GMT +7 (60(sec) * 60(min) * 7(hour))
   
-  delay(500);
-  String versiSW = "ARDUINO: setup rest v";
-  versiSW+=versionNum;
-  Serial.println(versiSW);
-  Serial.println(F("ARDUINO: system started"));
-
   //setup PIN
   pinMode(pinClam, INPUT);
   pinMode(pinInject, INPUT);
@@ -453,11 +453,10 @@ void loop() {
   ArduinoOTA.handle();
   timeClient.update();
   server.handleClient();
-  webSocket.loop();
-
   // If disconnected from websocket will try reconnect every 5 seconds
   webSocket.setReconnectInterval(5000);
-  
+  webSocket.loop();
+
   monitorCycleTime();
 
   // send data to websocket as JSON format
