@@ -56,7 +56,7 @@ boolean semiAuto=false; // True: Single Sensor for Clam and Injection
 char buff[64];
 char versi[6]="1.0.0"; // System Version
 String versionNum="1.0.0"; // System Version
-char mcid[8]="1000076"; // A_Asset_ID or Machine ID API 78
+char mcid[8]="1000077"; // A_Asset_ID or Machine ID API 78
 
 unsigned long timenow;
 unsigned long lastTime;
@@ -102,7 +102,7 @@ char html_template[] PROGMEM = R"=====(
           var data = JSON.parse(full_data);
           var id_data = data.id;
 
-          if(id_data == 1000078){  // machine id
+          if(id_data == 1000077){  // machine id
             var cla_data = data.cla;
             var inj_data = data.inj;
             var cyc_data = data.cyc;
@@ -307,7 +307,7 @@ void setup() {
   // Wifi Manager Setup
   //wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
-  wifiManager.autoConnect("esp8266-0de890");
+  wifiManager.autoConnect("esp8266-93430c");
   Serial.println("WiFi Connected..");
 
   String versiSW = "ARDUINO: setup rest v";
@@ -318,17 +318,17 @@ void setup() {
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());
   
-  // Webserver Setup
-  server.on("/", handleMain);
-  server.onNotFound(handleNotFound);
-  server.begin();
-
   // Websocket Setup
   Serial.print("[WSc] Try connect to WS server ");
   Serial.println(WS_address);
   webSocket.begin(WS_address, 7000, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
+
+  // Webserver Setup
+  server.on("/", handleMain);
+  server.onNotFound(handleNotFound);
+  server.begin();
 
   // OTA Setup
   ArduinoOTA.setPassword("1234");
@@ -353,7 +353,7 @@ void setup() {
 
   // NTP Setup
   timeClient.begin();
-  timeClient.setTimeOffset(25200); // GMT +7 (60(sec) * 60(min) * 7(hour))
+  timeClient.setTimeOffset(25202); // GMT +7 (60(sec) * 60(min) * 7(hour))
   
   //setup PIN
   pinMode(pinClam, INPUT);
@@ -413,7 +413,18 @@ void monitorCycleTime(){
         sendws = true;
         timenow=millis();
         cycleTime=(timenow-lastInject)/1000;
-        lastInject = timenow; 
+        lastInject = timenow;
+
+        // NTP get data
+        time_t epochTime = timeClient.getEpochTime();
+        c_hour = timeClient.getHours();
+        c_minute = timeClient.getMinutes();
+        c_second = timeClient.getSeconds();
+        struct tm *ptm = gmtime ((time_t *)&epochTime);
+        c_day = ptm->tm_mday;
+        c_month = ptm->tm_mon+1;
+        c_year = ptm->tm_year+1900;
+    
         if (cycleTime <= maxCycleTime){
           sendData=true;
         }
@@ -429,33 +440,24 @@ void monitorCycleTime(){
     }
     laststateInject=stateInject;
   }
-  
-  if(sendData == true){
-    numct = cycleTime;
-    // Serial.println(numct);
 
-    // NTP get data
-    time_t epochTime = timeClient.getEpochTime();
-    c_hour = timeClient.getHours();
-    c_minute = timeClient.getMinutes();
-    c_second = timeClient.getSeconds();
-    struct tm *ptm = gmtime ((time_t *)&epochTime);
-    c_day = ptm->tm_mday;
-    c_month = ptm->tm_mon+1;
-    c_year = ptm->tm_year+1900;
-    
+  if (sendData == false){
+    numct = 0;
+  } else if(sendData == true){
+    numct = cycleTime;
+    //Serial.println(numct);
     sendData=false;
     lastActivity=millis();
   }
 }
 
 void loop() {
-  ArduinoOTA.handle();
-  timeClient.update();
-  server.handleClient();
   // If disconnected from websocket will try reconnect every 5 seconds
   webSocket.setReconnectInterval(5000);
   webSocket.loop();
+  server.handleClient();
+  ArduinoOTA.handle();
+  timeClient.update();
 
   monitorCycleTime();
 
