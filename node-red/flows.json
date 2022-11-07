@@ -69,8 +69,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 250,
-        "y": 80,
+        "x": 110,
+        "y": 160,
         "wires": [
             [
                 "365142d3060d3afd"
@@ -89,7 +89,7 @@
         "finalize": "",
         "libs": [],
         "x": 110,
-        "y": 240,
+        "y": 300,
         "wires": [
             [
                 "6f69714592d5b2d1",
@@ -158,8 +158,9 @@
         "id": "0154c26c78122a08",
         "type": "function",
         "z": "6e29ed9e7ed7f280",
+        "d": true,
         "name": "sendDB",
-        "func": "msg.topic = \"INSERT INTO nodered(mc_id, last_cycle_duration, timestamp)\" + \n            \"VALUES('\" + msg.payload.id + \"','\" + msg.payload.cyc + \"','\" + msg.payload.time + \"')\";\nreturn msg;",
+        "func": "msg.topic = \"INSERT INTO nodered(mc_id, last_cycle_duration, shoot, timestamp)\" + \n    \"VALUES('\" + msg.payload.id + \"','\" + msg.payload.cyc + \"', '\" + msg.payload.shoot + \"','\" + msg.payload.time + \"')\";\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
@@ -427,11 +428,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 630,
+        "x": 610,
         "y": 380,
         "wires": [
             [
-                "4b5cbb36a252b379"
+                "b2e378f221abbce8"
             ]
         ]
     },
@@ -540,6 +541,26 @@
         ]
     },
     {
+        "id": "b2e378f221abbce8",
+        "type": "rbe",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": true,
+        "property": "payload",
+        "topi": "topic",
+        "x": 570,
+        "y": 340,
+        "wires": [
+            [
+                "4b5cbb36a252b379"
+            ]
+        ]
+    },
+    {
         "id": "7a91416b93f39491",
         "type": "MySQLdatabase",
         "name": "mySql",
@@ -552,7 +573,7 @@
     {
         "id": "822e26e97ced72dc",
         "type": "websocket-listener",
-        "path": "ws://192.168.100.3:7000/",
+        "path": "ws://192.168.1.124:7000/",
         "wholemsg": "false"
     }
 ]
