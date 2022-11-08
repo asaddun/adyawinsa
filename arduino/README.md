@@ -18,4 +18,6 @@ selain 192.168.1.xxx maka bisa melakukan OTA.
 milik board (Webserver).
 
 Kemarin coba pake AP sendiri (tidak terhubung internet), OTA bisa dilakukan, Websocket bisa terhubung tapi langsung terputus
-karena tidak ada internet. 
+karena tidak ada internet.
+
+Dugaan masalah berada pada segmen 1 (xxx.xxx.1.xxx) hasil diskusi dengan Pak Abe.
