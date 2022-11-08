@@ -1,4 +1,4 @@
-WemosD1R2_v1.2
+WemosD1R2_v1.1
 
 Wemos Report
 
