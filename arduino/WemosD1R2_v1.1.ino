@@ -56,7 +56,7 @@ boolean semiAuto=false; // True: Single Sensor for Clam and Injection
 char buff[64];
 char versi[6]="1.0.0"; // System Version
 String versionNum="1.0.0"; // System Version
-char mcid[8]="1000077"; // A_Asset_ID or Machine ID API 78
+char mcid[8]="1000078"; // A_Asset_ID or Machine ID API 78
 
 unsigned long timenow;
 unsigned long lastTime;
@@ -64,6 +64,7 @@ unsigned long cycleTime;
 unsigned long lastActivity;
 unsigned long lastUpdated;
 unsigned long maxCycleTime = 300 ; //maxmimum normal Cycle Time
+unsigned long upTime;
 
 //char response[64]
 int heaterState = 0;     // previous state of the button
@@ -74,8 +75,9 @@ int timerSensor=0;  // sensor update per 2 detik
 int numct, staInj, staCla, shoot;
 int c_day, c_month, c_year;
 int c_hour, c_minute, c_second;
-String WS_address = "192.168.1.124"; // Websocket server address
-String JSON_Data;
+int up_hour, up_minute, up_second;
+String WS_address = "192.168.200.252"; // Websocket server address
+String JSON_Data, formattedTime, currentDate;
 boolean sendws = false, wifiConnected = true, sendData = false;
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
@@ -94,7 +96,7 @@ char html_template[] PROGMEM = R"=====(
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Dashboard</title>
       <script>
-        var socket = new WebSocket("ws://192.168.1.124:7000");
+        var socket = new WebSocket("ws://192.168.200.252:7000");
         socket.onmessage  = 
         function(event) {  
           var full_data = event.data;
@@ -102,7 +104,7 @@ char html_template[] PROGMEM = R"=====(
           var data = JSON.parse(full_data);
           var id_data = data.id;
 
-          if(id_data == 1000077){  // machine id
+          if(id_data == 1000078){  // machine id
             var cla_data = data.cla;
             var inj_data = data.inj;
             var cyc_data = data.cyc;
@@ -252,6 +254,13 @@ char html_template[] PROGMEM = R"=====(
           <span id="id_value"></span>
         </div>
       </div>
+      <!--
+      <form action="/ip">
+        IP:<br>
+        <input type="text" name="ip">
+        <button type="submit" name="submit">Submit</button>
+      </form>
+      -->
    </body>
 </html>
 )=====";
@@ -291,6 +300,13 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 void handleMain() {
   server.send_P(200, "text/html", html_template ); 
 }
+/*
+void handleForm() {
+  WS_address = server.arg("ip");
+  Serial.print("New Websocket Server: "); Serial.println(WS_address);
+  webSocket.begin(WS_address, 7000, "/");
+  server.send_P(200, "text/html", "<html><body><a href='/'>Back</a></body></html>" ); 
+}*/
 void handleNotFound() {
   server.send(404,   "text/html", "<html><body><p>404 Error</p></body></html>" );
 }
@@ -305,9 +321,9 @@ void setup() {
     }
   
   // Wifi Manager Setup
-  //wifiManager.resetSettings();
+  wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
-  wifiManager.autoConnect("esp8266-93430c");
+  wifiManager.autoConnect("esp8266-dc9c95");
   Serial.println("WiFi Connected..");
 
   String versiSW = "ARDUINO: setup rest v";
@@ -327,6 +343,7 @@ void setup() {
 
   // Webserver Setup
   server.on("/", handleMain);
+  //server.on("/ip", handleForm);
   server.onNotFound(handleNotFound);
   server.begin();
 
@@ -370,6 +387,7 @@ void setup() {
     semiAuto=true;
   }
   // Init First Run
+  upTime = millis();
   lastInject = millis();
   lastClamp = lastInject;
 }
@@ -410,20 +428,34 @@ void monitorCycleTime(){
         staInj = 1;
         shoot += 1;
         // Serial.println("1,1,");
-        sendws = true;
+        
         timenow=millis();
         cycleTime=(timenow-lastInject)/1000;
         lastInject = timenow;
 
         // NTP get data
         time_t epochTime = timeClient.getEpochTime();
+        formattedTime = timeClient.getFormattedTime();
+        /*
         c_hour = timeClient.getHours();
         c_minute = timeClient.getMinutes();
         c_second = timeClient.getSeconds();
+        */
         struct tm *ptm = gmtime ((time_t *)&epochTime);
         c_day = ptm->tm_mday;
         c_month = ptm->tm_mon+1;
         c_year = ptm->tm_year+1900;
+        currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
+
+        /*
+        up_second = upTime / 1000;
+        up_minute = up_second / 60;
+        up_hour = up_minute / 60;
+        totalUpTime = up_hour + ":" + up_minute + ":" + up_second;
+        Serial.println(totalUpTime);
+        */
+
+        sendws = true;
     
         if (cycleTime <= maxCycleTime){
           sendData=true;
@@ -441,9 +473,7 @@ void monitorCycleTime(){
     laststateInject=stateInject;
   }
 
-  if (sendData == false){
-    numct = 0;
-  } else if(sendData == true){
+  if(sendData == true){
     numct = cycleTime;
     //Serial.println(numct);
     sendData=false;
@@ -475,20 +505,29 @@ void loop() {
     JSON_Data += ",\"shoot\":";
     JSON_Data += shoot;
     
+    JSON_Data += ",\"date\":\"";
+    JSON_Data += currentDate;
+    JSON_Data += "\"";
+    JSON_Data += ",\"time\":\"";
+    JSON_Data += formattedTime;
+    JSON_Data += "\"";
+    
+    /*
     JSON_Data += ",\"day\":";
     JSON_Data += c_day;
     JSON_Data += ",\"mon\":";
     JSON_Data += c_month;
     JSON_Data += ",\"year\":";
     JSON_Data += c_year;
-    
+    */
+    /*
     JSON_Data += ",\"hour\":";
     JSON_Data += c_hour;
     JSON_Data += ",\"min\":";
     JSON_Data += c_minute;
     JSON_Data += ",\"sec\":";
     JSON_Data += c_second;
-    
+    */
     JSON_Data += "}";
     Serial.println(JSON_Data);
     webSocket.sendTXT(JSON_Data);
