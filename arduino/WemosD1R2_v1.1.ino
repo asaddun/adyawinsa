@@ -21,11 +21,7 @@
  
 void(* resetFunc) (void) = 0; //declare reset function @ address 0 
 
-#define  pinTemp D5           //Get Temp Data
-#define  pinClam D6           //Clamp Process
-#define  pinInject D7         //Injection Process
-#define  pinHeater D8         //Heater ON
-
+#include <FS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <WebSocketsClient.h>
@@ -37,10 +33,15 @@ void(* resetFunc) (void) = 0; //declare reset function @ address 0
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
+#define  pinTemp D5           //Get Temp Data
+#define  pinClam D6           //Clamp Process
+#define  pinInject D7         //Injection Process
+#define  pinHeater D8         //Heater ON
+
 //ESP8266WiFiMulti WiFiMulti;
+WiFiManager wifiManager;
 ESP8266WebServer server(80);
 WebSocketsClient webSocket;
-WiFiManager wifiManager;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
@@ -64,7 +65,6 @@ unsigned long cycleTime;
 unsigned long lastActivity;
 unsigned long lastUpdated;
 unsigned long maxCycleTime = 300 ; //maxmimum normal Cycle Time
-unsigned long upTime;
 
 //char response[64]
 int heaterState = 0;     // previous state of the button
@@ -76,9 +76,11 @@ int numct, staInj, staCla, shoot;
 int c_day, c_month, c_year;
 int c_hour, c_minute, c_second;
 int up_hour, up_minute, up_second;
-String WS_address = "192.168.200.252"; // Websocket server address
 String JSON_Data, formattedTime, currentDate;
 boolean sendws = false, wifiConnected = true, sendData = false;
+bool shouldSaveConfig = false;
+char deviceId[10];
+char WSaddress[16] = "192.168.200.252"; // Websocket server address
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
 boolean helpNotification=false;
@@ -254,13 +256,6 @@ char html_template[] PROGMEM = R"=====(
           <span id="id_value"></span>
         </div>
       </div>
-      <!--
-      <form action="/ip">
-        IP:<br>
-        <input type="text" name="ip">
-        <button type="submit" name="submit">Submit</button>
-      </form>
-      -->
    </body>
 </html>
 )=====";
@@ -300,15 +295,13 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 void handleMain() {
   server.send_P(200, "text/html", html_template ); 
 }
-/*
-void handleForm() {
-  WS_address = server.arg("ip");
-  Serial.print("New Websocket Server: "); Serial.println(WS_address);
-  webSocket.begin(WS_address, 7000, "/");
-  server.send_P(200, "text/html", "<html><body><a href='/'>Back</a></body></html>" ); 
-}*/
 void handleNotFound() {
   server.send(404,   "text/html", "<html><body><p>404 Error</p></body></html>" );
+}
+
+void saveConfigCallback() {
+  Serial.println("Should save config");
+  shouldSaveConfig = true;
 }
 
 void setup() {
@@ -319,12 +312,71 @@ void setup() {
         Serial.flush();
         delay(1000);
     }
+
+  Serial.println("Mounting FS...");    //read configuration from FS json
+
+  if (SPIFFS.begin()) {
+    Serial.println("mounted file system");
+    if (SPIFFS.exists("/config.json")) {
+      //file exists, reading and loading
+      Serial.println("reading config file");
+      File configFile = SPIFFS.open("/config.json", "r");
+      if (configFile) {
+        Serial.println("opened config file");
+        size_t size = configFile.size();
+        // Allocate a buffer to store contents of the file.
+        std::unique_ptr<char[]> buf(new char[size]);
+
+        configFile.readBytes(buf.get(), size);
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject& json = jsonBuffer.parseObject(buf.get());
+        json.printTo(Serial);
+        if (json.success()) {
+          Serial.println("\nparsed json");
+          strcpy(deviceId, json["deviceId"]);
+          //strcpy(WSaddress, json["WSaddress"]);
+        } else {
+          Serial.println("failed to load json config");
+        }
+      }
+    }
+  } else {
+    Serial.println("failed to mount FS");
+  }
+  //end read
   
   // Wifi Manager Setup
+  // id/name placeholder/prompt default length
+  WiFiManagerParameter customDeviceId("deviceId", "Device Id", deviceId, 10);
+  WiFiManagerParameter customWSaddress("WSaddress", "Websocket Address", WSaddress, 16);
+  wifiManager.setSaveConfigCallback(saveConfigCallback);
+  wifiManager.addParameter(&customDeviceId);
+  wifiManager.addParameter(&customWSaddress);
   wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
-  wifiManager.autoConnect("esp8266-dc9c95");
-  Serial.println("WiFi Connected..");
+  wifiManager.autoConnect();
+  strcpy(deviceId, customDeviceId.getValue());
+  strcpy(WSaddress, customWSaddress.getValue());
+
+  if (shouldSaveConfig) {
+    Serial.println("saving config");
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& json = jsonBuffer.createObject();
+    json["deviceId"] = deviceId;
+    json["WSaddress"] = WSaddress;
+
+    File configFile = SPIFFS.open("/config.json", "w");
+    if (!configFile) {
+      Serial.println("failed to open config file for writing");
+    }
+
+    json.printTo(Serial);
+    json.printTo(configFile);
+    configFile.close();
+    //end save
+  }
+  
+  Serial.println("\nWiFi Connected..");
 
   String versiSW = "ARDUINO: setup rest v";
   versiSW+=versionNum;
@@ -336,8 +388,8 @@ void setup() {
   
   // Websocket Setup
   Serial.print("[WSc] Try connect to WS server ");
-  Serial.println(WS_address);
-  webSocket.begin(WS_address, 7000, "/"); // Websocket server address
+  Serial.println(WSaddress);
+  webSocket.begin(WSaddress, 7000, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
@@ -387,7 +439,7 @@ void setup() {
     semiAuto=true;
   }
   // Init First Run
-  upTime = millis();
+  //upTime = millis();
   lastInject = millis();
   lastClamp = lastInject;
 }
@@ -436,25 +488,12 @@ void monitorCycleTime(){
         // NTP get data
         time_t epochTime = timeClient.getEpochTime();
         formattedTime = timeClient.getFormattedTime();
-        /*
-        c_hour = timeClient.getHours();
-        c_minute = timeClient.getMinutes();
-        c_second = timeClient.getSeconds();
-        */
         struct tm *ptm = gmtime ((time_t *)&epochTime);
         c_day = ptm->tm_mday;
         c_month = ptm->tm_mon+1;
         c_year = ptm->tm_year+1900;
         currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
-
-        /*
-        up_second = upTime / 1000;
-        up_minute = up_second / 60;
-        up_hour = up_minute / 60;
-        totalUpTime = up_hour + ":" + up_minute + ":" + up_second;
-        Serial.println(totalUpTime);
-        */
-
+        
         sendws = true;
     
         if (cycleTime <= maxCycleTime){
@@ -495,7 +534,7 @@ void loop() {
   if (sendws == true){
     JSON_Data = "{";
     JSON_Data += "\"id\":";
-    JSON_Data += mcid;
+    JSON_Data += deviceId;
     JSON_Data += ",\"cla\":";
     JSON_Data += staCla;
     JSON_Data += ",\"inj\":";
@@ -504,30 +543,12 @@ void loop() {
     JSON_Data += numct;
     JSON_Data += ",\"shoot\":";
     JSON_Data += shoot;
-    
     JSON_Data += ",\"date\":\"";
     JSON_Data += currentDate;
     JSON_Data += "\"";
     JSON_Data += ",\"time\":\"";
     JSON_Data += formattedTime;
     JSON_Data += "\"";
-    
-    /*
-    JSON_Data += ",\"day\":";
-    JSON_Data += c_day;
-    JSON_Data += ",\"mon\":";
-    JSON_Data += c_month;
-    JSON_Data += ",\"year\":";
-    JSON_Data += c_year;
-    */
-    /*
-    JSON_Data += ",\"hour\":";
-    JSON_Data += c_hour;
-    JSON_Data += ",\"min\":";
-    JSON_Data += c_minute;
-    JSON_Data += ",\"sec\":";
-    JSON_Data += c_second;
-    */
     JSON_Data += "}";
     Serial.println(JSON_Data);
     webSocket.sendTXT(JSON_Data);
