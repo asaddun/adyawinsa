@@ -7,6 +7,7 @@ Wemos Report
 3. Network Protocol Time ✅
 4. Over the Air ✅ (tapi terblokir dari jaringan kantor)
 5. Tiap board bisa menampilkan hanya cycle data masing-masing (dari machine id mereka)
+6. Tombol 'Reset' di webpage masing-masing board
 
 Masalah:
 (Opini sendiri) dengan sambungan API-HOTSPOT
