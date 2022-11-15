@@ -79,7 +79,7 @@ int up_hour, up_minute, up_second;
 String JSON_Data, formattedTime, currentDate;
 boolean sendws = false, wifiConnected = true, sendData = false;
 bool shouldSaveConfig = false;
-char deviceId[10] = "0000000";
+char deviceId[10];
 char WSaddress[16] = "192.168.200.252"; // Websocket server address
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
@@ -106,7 +106,7 @@ char html_template[] PROGMEM = R"=====(
           var data = JSON.parse(full_data);
           var id_data = data.id;
 
-          if(id_data == 1000078){  // machine id
+          if(id_data == 1000077){  // machine id
             var cla_data = data.cla;
             var inj_data = data.inj;
             var cyc_data = data.cyc;
@@ -365,8 +365,8 @@ void setup() {
         json.printTo(Serial);
         if (json.success()) {
           Serial.println("\nparsed json");
-          //strcpy(deviceId, json["deviceId"]);
-          //strcpy(WSaddress, json["WSaddress"]);
+          strcpy(deviceId, json["deviceId"]);
+          strcpy(WSaddress, json["WSaddress"]);
         } else {
           Serial.println("failed to load json config");
         }
