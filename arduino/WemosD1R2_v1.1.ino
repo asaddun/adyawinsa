@@ -79,7 +79,7 @@ int up_hour, up_minute, up_second;
 String JSON_Data, formattedTime, currentDate;
 boolean sendws = false, wifiConnected = true, sendData = false;
 bool shouldSaveConfig = false;
-char deviceId[10];
+char deviceId[10] = "0000000";
 char WSaddress[16] = "192.168.200.252"; // Websocket server address
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
@@ -111,20 +111,12 @@ char html_template[] PROGMEM = R"=====(
             var inj_data = data.inj;
             var cyc_data = data.cyc;
             var shoot_data = data.shoot;
-            var day_data = data.day;
-            var mon_data = data.mon;
-            var year_data = data.year;
-            var hour_data = data.hour;
-            var min_data = data.min;
-            var sec_data = data.sec;
+            var date_data = data.date;
+            var time_data = data.time;
   
             if (inj_data == 1){ // take the timestamp when inject
-              document.getElementById("day_value").innerHTML = day_data;
-              document.getElementById("mon_value").innerHTML = mon_data;
-              document.getElementById("year_value").innerHTML = year_data;
-              document.getElementById("hour_value").innerHTML = hour_data;
-              document.getElementById("min_value").innerHTML = min_data;
-              document.getElementById("sec_value").innerHTML = sec_data;
+              document.getElementById("date_value").innerHTML = date_data;
+              document.getElementById("time_value").innerHTML = time_data;;
             }
   
             if(cla_data == 0){
@@ -248,18 +240,51 @@ char html_template[] PROGMEM = R"=====(
         </div>
         <div class="time">
           Last Cycle On:<br>
-          <span id="day_value">0</span>/<span id="mon_value">0</span>/<span id="year_value">0</span><br>
-          <span id="hour_value">0</span>:<span id="min_value">0</span>:<span id="sec_value">0</span>
+          <span id="date_value"> </span><br>
+          <span id="time_value"> </span>
         </div>
         <div class="idbox">
           ID:<br>
           <span id="id_value"></span>
         </div>
       </div>
+      <button onclick="location.href='/reset'">Reset</button>
    </body>
 </html>
 )=====";
 
+char html_reset[] PROGMEM = R"=====(
+  <!DOCTYPE html>
+  <html>
+  <script>
+    function reset() {
+      var x = document.getElementById("reset").value;
+      var text = "";
+      if (x == "1234"){
+        alert("ESP has been reset!!");
+        window.location.pathname = ('/confirm_reset');
+      } else {
+        alert("Incorrect Password!!");
+      }
+    }
+    function showPass() {
+      var x = document.getElementById("reset");
+      if (x.type === "password") {
+        x.type = "text";
+      } else {
+        x.type = "password";
+      }
+    }
+  </script>
+  <body>
+    Password to Reset:<br>
+    <input id="reset" type="password"><br>
+    <input type="checkbox" onclick="showPass()">Show Password
+    <br><br>
+    <button onclick="reset()">Reset</button>
+  </body>
+  </html>
+)=====";
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     switch(type) {
@@ -294,6 +319,13 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 void handleMain() {
   server.send_P(200, "text/html", html_template ); 
+}
+void handleReset() {
+  server.send_P(200, "text/html", html_reset );
+}
+void ConfirmReset() {
+  server.send_P(200, "text/html", "<html><body><p>ESP has been reset</p></body></html>" );
+  ESP.restart();
 }
 void handleNotFound() {
   server.send(404,   "text/html", "<html><body><p>404 Error</p></body></html>" );
@@ -333,7 +365,7 @@ void setup() {
         json.printTo(Serial);
         if (json.success()) {
           Serial.println("\nparsed json");
-          strcpy(deviceId, json["deviceId"]);
+          //strcpy(deviceId, json["deviceId"]);
           //strcpy(WSaddress, json["WSaddress"]);
         } else {
           Serial.println("failed to load json config");
@@ -385,6 +417,13 @@ void setup() {
 
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());
+
+  // Webserver Setup
+  server.on("/", handleMain);
+  server.on("/reset", handleReset);
+  server.on("/confirm_reset", ConfirmReset);
+  server.onNotFound(handleNotFound);
+  server.begin();
   
   // Websocket Setup
   Serial.print("[WSc] Try connect to WS server ");
@@ -392,12 +431,6 @@ void setup() {
   webSocket.begin(WSaddress, 7000, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
-
-  // Webserver Setup
-  server.on("/", handleMain);
-  //server.on("/ip", handleForm);
-  server.onNotFound(handleNotFound);
-  server.begin();
 
   // OTA Setup
   ArduinoOTA.setPassword("1234");
@@ -521,10 +554,10 @@ void monitorCycleTime(){
 }
 
 void loop() {
+  server.handleClient();
   // If disconnected from websocket will try reconnect every 5 seconds
   webSocket.setReconnectInterval(5000);
   webSocket.loop();
-  server.handleClient();
   ArduinoOTA.handle();
   timeClient.update();
 
