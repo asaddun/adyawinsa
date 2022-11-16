@@ -1,9 +1,9 @@
 [
     {
-        "id": "ee4bc3d7a440f5c0",
+        "id": "2981886f18875cde",
         "type": "debug",
-        "z": "6e29ed9e7ed7f280",
-        "name": "debug 4",
+        "z": "0884a56eb46e2082",
+        "name": "debug 5",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -11,45 +11,30 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1340,
-        "y": 180,
+        "x": 1300,
+        "y": 220,
         "wires": []
     },
     {
-        "id": "fa564eb314da88e4",
+        "id": "2ca5257796584a32",
         "type": "mysql",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "d": true,
         "mydb": "7a91416b93f39491",
         "name": "",
-        "x": 1150,
-        "y": 180,
+        "x": 1110,
+        "y": 220,
         "wires": [
             [
-                "ee4bc3d7a440f5c0"
+                "2981886f18875cde"
             ]
         ]
     },
     {
-        "id": "480fc49a6c0d87e8",
-        "type": "websocket in",
-        "z": "6e29ed9e7ed7f280",
-        "name": "board:client",
-        "server": "822e26e97ced72dc",
-        "client": "",
-        "x": 90,
-        "y": 80,
-        "wires": [
-            [
-                "7db7853cb643952e"
-            ]
-        ]
-    },
-    {
-        "id": "d82a604c9bdc1f1d",
+        "id": "347a81c8d334744d",
         "type": "debug",
-        "z": "6e29ed9e7ed7f280",
-        "name": "debug 0",
+        "z": "0884a56eb46e2082",
+        "name": "debug 6",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -58,30 +43,30 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 960,
-        "y": 240,
+        "x": 940,
+        "y": 260,
         "wires": []
     },
     {
-        "id": "7db7853cb643952e",
+        "id": "c16cf8dcb8b61e8f",
         "type": "json",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "",
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 110,
+        "x": 130,
         "y": 160,
         "wires": [
             [
-                "365142d3060d3afd"
+                "8e04836933627f36"
             ]
         ]
     },
     {
-        "id": "365142d3060d3afd",
+        "id": "8e04836933627f36",
         "type": "function",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "parseJSON",
         "func": "var data = msg.payload;\nvar inj = { payload: data.inj };\nvar id = { payload: data.id };\nvar cyc = { payload: data.cyc };\nvar shoot = { payload: data.shoot };\nvar day = { payload: data.day };\nvar mon = { payload: data.mon };\nvar year = { payload: data.year };\nvar hour = { payload: data.hour };\nvar min = { payload: data.min };\nvar sec = { payload: data.sec };\nvar date = { payload: data.date };\nvar time = { payload: data.time };\nreturn [inj, id, cyc, shoot, date, time];",
         "outputs": 6,
@@ -89,35 +74,33 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 110,
+        "x": 130,
         "y": 300,
         "wires": [
             [
-                "6f69714592d5b2d1",
-                "4b5cbb36a252b379",
-                "6a2e39166ea7c666"
+                "080acec5b85b5e5a"
             ],
             [
-                "6e4ebb54ae4c5583"
+                "e3a586dd622d6052"
             ],
             [
-                "3d5680a0d0773b64"
+                "14d5dcb7c2d70144"
             ],
             [
-                "3c48dd694dd1447b"
+                "89a9b1281c629a7c"
             ],
             [
-                "ab11874bc213f80c"
+                "c4766988bd8cbad9"
             ],
             [
-                "59db7e3a31621d99"
+                "4b100364c32a9b08"
             ]
         ]
     },
     {
-        "id": "e11e932aa72e49b5",
+        "id": "0c7b66ad88b78b32",
         "type": "join",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "",
         "mode": "custom",
         "build": "object",
@@ -134,19 +117,19 @@
         "reduceInit": "",
         "reduceInitType": "num",
         "reduceFixup": "",
-        "x": 810,
-        "y": 180,
+        "x": 570,
+        "y": 220,
         "wires": [
             [
-                "d82a604c9bdc1f1d",
-                "0154c26c78122a08"
+                "6601218accac8c08",
+                "080acec5b85b5e5a"
             ]
         ]
     },
     {
-        "id": "0154c26c78122a08",
+        "id": "6601218accac8c08",
         "type": "function",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "d": true,
         "name": "sendDB",
         "func": "msg.topic = \"INSERT INTO nodered(mc_id, last_cycle_duration, shoot, timestamp)\" + \n    \"VALUES('\" + msg.payload.id + \"','\" + msg.payload.cyc + \"', '\" + msg.payload.shoot + \"','\" + msg.payload.time + \"')\";\nreturn msg;",
@@ -155,18 +138,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 980,
-        "y": 180,
+        "x": 940,
+        "y": 220,
         "wires": [
             [
-                "fa564eb314da88e4"
+                "2ca5257796584a32"
             ]
         ]
     },
     {
-        "id": "6e4ebb54ae4c5583",
+        "id": "e3a586dd622d6052",
         "type": "function",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "id",
         "func": "msg.topic = \"id\";\nreturn msg;",
         "outputs": 1,
@@ -174,85 +157,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
+        "x": 330,
         "y": 160,
         "wires": [
             [
-                "e11e932aa72e49b5"
+                "0c7b66ad88b78b32"
             ]
         ]
     },
     {
-        "id": "6f69714592d5b2d1",
-        "type": "trigger",
-        "z": "6e29ed9e7ed7f280",
-        "name": "",
-        "op1": "",
-        "op2": "0",
-        "op1type": "pay",
-        "op2type": "str",
-        "duration": "0",
-        "extend": false,
-        "overrideDelay": false,
-        "units": "ms",
-        "reset": "1",
-        "bytopic": "all",
-        "topic": "topic",
-        "outputs": 1,
-        "x": 520,
-        "y": 200,
-        "wires": [
-            [
-                "e11e932aa72e49b5"
-            ]
-        ]
-    },
-    {
-        "id": "afd4cbaedd17acd8",
-        "type": "debug",
-        "z": "6e29ed9e7ed7f280",
-        "name": "debug 1",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 780,
-        "y": 340,
-        "wires": []
-    },
-    {
-        "id": "4b5cbb36a252b379",
-        "type": "trigger",
-        "z": "6e29ed9e7ed7f280",
-        "name": "",
-        "op1": "",
-        "op2": "0",
-        "op1type": "pay",
-        "op2type": "str",
-        "duration": "0",
-        "extend": false,
-        "overrideDelay": false,
-        "units": "ms",
-        "reset": "1",
-        "bytopic": "all",
-        "topic": "topic",
-        "outputs": 1,
-        "x": 520,
-        "y": 280,
-        "wires": [
-            [
-                "e11e932aa72e49b5"
-            ]
-        ]
-    },
-    {
-        "id": "3c48dd694dd1447b",
+        "id": "89a9b1281c629a7c",
         "type": "function",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "shoot",
         "func": "msg.topic = \"shoot\";\nreturn msg;",
         "outputs": 1,
@@ -260,43 +176,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
+        "x": 330,
         "y": 240,
         "wires": [
             [
-                "6a2e39166ea7c666"
+                "0c7b66ad88b78b32"
             ]
         ]
     },
     {
-        "id": "6a2e39166ea7c666",
-        "type": "trigger",
-        "z": "6e29ed9e7ed7f280",
-        "name": "",
-        "op1": "",
-        "op2": "0",
-        "op1type": "pay",
-        "op2type": "str",
-        "duration": "0",
-        "extend": false,
-        "overrideDelay": false,
-        "units": "ms",
-        "reset": "1",
-        "bytopic": "all",
-        "topic": "topic",
-        "outputs": 1,
-        "x": 520,
-        "y": 240,
-        "wires": [
-            [
-                "e11e932aa72e49b5"
-            ]
-        ]
-    },
-    {
-        "id": "3d5680a0d0773b64",
+        "id": "14d5dcb7c2d70144",
         "type": "function",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "cyc",
         "func": "msg.topic = \"cyc\";\nreturn msg;",
         "outputs": 1,
@@ -304,18 +195,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
+        "x": 330,
         "y": 200,
         "wires": [
             [
-                "6f69714592d5b2d1"
+                "0c7b66ad88b78b32"
             ]
         ]
     },
     {
-        "id": "b2e378f221abbce8",
+        "id": "61c4d40d3731c698",
         "type": "rbe",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "",
         "func": "rbe",
         "gap": "",
@@ -324,19 +215,18 @@
         "septopics": true,
         "property": "payload",
         "topi": "topic",
-        "x": 570,
-        "y": 340,
+        "x": 470,
+        "y": 300,
         "wires": [
             [
-                "4b5cbb36a252b379",
-                "afd4cbaedd17acd8"
+                "0c7b66ad88b78b32"
             ]
         ]
     },
     {
-        "id": "59db7e3a31621d99",
+        "id": "4b100364c32a9b08",
         "type": "function",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "time",
         "func": "msg.topic = \"time\";\nreturn msg;",
         "outputs": 1,
@@ -344,18 +234,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
+        "x": 330,
         "y": 360,
         "wires": [
             [
-                "bd97b5631c20acb4"
+                "a00196fc9e528b71"
             ]
         ]
     },
     {
-        "id": "ab11874bc213f80c",
+        "id": "c4766988bd8cbad9",
         "type": "function",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "date",
         "func": "msg.topic = \"date\";\nreturn msg;",
         "outputs": 1,
@@ -363,18 +253,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
+        "x": 330,
         "y": 320,
         "wires": [
             [
-                "bd97b5631c20acb4"
+                "a00196fc9e528b71"
             ]
         ]
     },
     {
-        "id": "bd97b5631c20acb4",
+        "id": "a00196fc9e528b71",
         "type": "join",
-        "z": "6e29ed9e7ed7f280",
+        "z": "0884a56eb46e2082",
         "name": "",
         "mode": "custom",
         "build": "string",
@@ -391,11 +281,51 @@
         "reduceInit": "",
         "reduceInitType": "num",
         "reduceFixup": "",
-        "x": 430,
+        "x": 450,
         "y": 340,
         "wires": [
             [
-                "b2e378f221abbce8"
+                "61c4d40d3731c698"
+            ]
+        ]
+    },
+    {
+        "id": "080acec5b85b5e5a",
+        "type": "trigger",
+        "z": "0884a56eb46e2082",
+        "name": "",
+        "op1": "",
+        "op2": "0",
+        "op1type": "pay",
+        "op2type": "str",
+        "duration": "0",
+        "extend": false,
+        "overrideDelay": false,
+        "units": "ms",
+        "reset": "1",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 740,
+        "y": 260,
+        "wires": [
+            [
+                "347a81c8d334744d"
+            ]
+        ]
+    },
+    {
+        "id": "d59e210dbcc509bf",
+        "type": "websocket in",
+        "z": "0884a56eb46e2082",
+        "name": "board:client",
+        "server": "",
+        "client": "9ae870f71b977241",
+        "x": 110,
+        "y": 80,
+        "wires": [
+            [
+                "c16cf8dcb8b61e8f"
             ]
         ]
     },
@@ -410,9 +340,12 @@
         "charset": "UTF8"
     },
     {
-        "id": "822e26e97ced72dc",
-        "type": "websocket-listener",
+        "id": "9ae870f71b977241",
+        "type": "websocket-client",
         "path": "ws://192.168.200.252:7000/",
-        "wholemsg": "false"
+        "tls": "",
+        "wholemsg": "false",
+        "hb": "0",
+        "subprotocol": ""
     }
 ]
