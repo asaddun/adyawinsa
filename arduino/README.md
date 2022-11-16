@@ -6,7 +6,7 @@ Wemos Report
 2. WiFi Manager (custom parameter di bagian setup)
 3. Network Protocol Time
 4. Over the Air (tapi terblokir dari jaringan kantor)
-5. Tiap board bisa menampilkan hanya cycle data masing-masing (dari device id)
+5. Tiap board bisa menampilkan hanya cycle data masing-masing
 6. Tombol 'Reset' di webpage masing-masing board
 
 Masalah:
