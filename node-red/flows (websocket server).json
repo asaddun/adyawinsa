@@ -31,22 +31,6 @@
         ]
     },
     {
-        "id": "d59e210dbcc509bf",
-        "type": "websocket in",
-        "z": "0884a56eb46e2082",
-        "d": true,
-        "name": "board:client",
-        "server": "",
-        "client": "9ae870f71b977241",
-        "x": 110,
-        "y": 80,
-        "wires": [
-            [
-                "c16cf8dcb8b61e8f"
-            ]
-        ]
-    },
-    {
         "id": "347a81c8d334744d",
         "type": "debug",
         "z": "0884a56eb46e2082",
@@ -337,7 +321,7 @@
         "name": "Websocket Server",
         "server": "2fa3cc6b3a238722",
         "client": "",
-        "x": 330,
+        "x": 130,
         "y": 80,
         "wires": [
             [
@@ -354,15 +338,6 @@
         "db": "test",
         "tz": "",
         "charset": "UTF8"
-    },
-    {
-        "id": "9ae870f71b977241",
-        "type": "websocket-client",
-        "path": "ws://192.168.200.252:7000/",
-        "tls": "",
-        "wholemsg": "false",
-        "hb": "0",
-        "subprotocol": ""
     },
     {
         "id": "2fa3cc6b3a238722",
