@@ -2,7 +2,7 @@ WemosD1R2_v1.1
 
 Wemos Report
 
-1. Websocket Client
+1. Websocket Client & Server
 2. WiFi Manager (custom parameter di bagian setup)
 3. Network Protocol Time
 4. Over the Air (tapi terblokir dari jaringan kantor)
