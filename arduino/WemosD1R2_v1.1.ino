@@ -24,6 +24,7 @@ void(* resetFunc) (void) = 0; //declare reset function @ address 0
 #include <FS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <WebSocketsServer.h>
 #include <WebSocketsClient.h>
 #include <Hash.h>
 #include <ArduinoJson.h>
@@ -41,6 +42,7 @@ void(* resetFunc) (void) = 0; //declare reset function @ address 0
 //ESP8266WiFiMulti WiFiMulti;
 WiFiManager wifiManager;
 ESP8266WebServer server(80);
+WebSocketsServer webSocket_server = WebSocketsServer(81);
 WebSocketsClient webSocket;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
@@ -55,9 +57,9 @@ int laststateInject = 0,laststateClamp = 0;     // previous state of the button
 boolean semiAuto=false; // True: Single Sensor for Clam and Injection
 
 char buff[64];
-char versi[6]="1.0.0"; // System Version
-String versionNum="1.0.0"; // System Version
-char mcid[8]="1000078"; // A_Asset_ID or Machine ID API 78
+char versi[6]="4.0.0"; // System Version
+String versionNum="4.0.0"; // System Version
+//char mcid[8]="1000078"; // A_Asset_ID or Machine ID API 78
 
 unsigned long timenow;
 unsigned long lastTime;
@@ -69,18 +71,19 @@ unsigned long maxCycleTime = 300 ; //maxmimum normal Cycle Time
 //char response[64]
 int heaterState = 0;     // previous state of the button
 int pumpState = 0;     // previous state of the button
-char heaterON[2]="0"; // Heater State
-char pumpON[2]="0"; // Pump State
+char heaterON[2]="1"; // Heater State
+char pumpON[2]="1"; // Pump State
 int timerSensor=0;  // sensor update per 2 detik
 int numct, staInj, staCla, shoot;
 int c_day, c_month, c_year;
-int c_hour, c_minute, c_second;
-int up_hour, up_minute, up_second;
 String JSON_Data, formattedTime, currentDate;
 boolean sendws = false, wifiConnected = true, sendData = false;
 bool shouldSaveConfig = false;
 char deviceId[10];
-char WSaddress[16] = "192.168.200.252"; // Websocket server address
+char WSaddress[16]; // Websocket server address
+char chPort[5];
+String strPort;
+int WSport;
 
 int helpButtonState = 0,helpButtonLastState = 0,helpStatus=0;
 boolean helpNotification=false;
@@ -98,48 +101,45 @@ char html_template[] PROGMEM = R"=====(
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Dashboard</title>
       <script>
-        var socket = new WebSocket("ws://192.168.200.252:7000");
+        var socket = new WebSocket("ws://" + window.location.hostname + ":81");
         socket.onmessage  = 
         function(event) {  
           var full_data = event.data;
           console.log(full_data);
           var data = JSON.parse(full_data);
           var id_data = data.id;
+          var cla_data = data.cla;
+          var inj_data = data.inj;
+          var cyc_data = data.cyc;
+          var shoot_data = data.shoot;
+          var date_data = data.date;
+          var time_data = data.time;
 
-          if(id_data == 1000077){  // machine id
-            var cla_data = data.cla;
-            var inj_data = data.inj;
-            var cyc_data = data.cyc;
-            var shoot_data = data.shoot;
-            var date_data = data.date;
-            var time_data = data.time;
-  
-            if (inj_data == 1){ // take the timestamp when inject
-              document.getElementById("date_value").innerHTML = date_data;
-              document.getElementById("time_value").innerHTML = time_data;;
-            }
-  
-            if(cla_data == 0){
-              cla_data = "OFF";
-              cla_data = cla_data.fontcolor("red");
-            }else{
-              cla_data = "ON";
-              cla_data = cla_data.fontcolor("green");
-            }
-            if(inj_data == 0){
-              inj_data = "OFF";
-              inj_data = inj_data.fontcolor("red");
-            }else{
-              inj_data = "ON";
-              inj_data = inj_data.fontcolor("green");
-            }
-  
-            document.getElementById("id_value").innerHTML = id_data;
-            document.getElementById("cla_value").innerHTML = cla_data;
-            document.getElementById("inj_value").innerHTML = inj_data;
-            document.getElementById("cyc_value").innerHTML = cyc_data;
-            document.getElementById("shoot_value").innerHTML = shoot_data;
+          if (inj_data == 1){ // take the timestamp when inject
+            document.getElementById("date_value").innerHTML = date_data;
+            document.getElementById("time_value").innerHTML = time_data;;
           }
+
+          if(cla_data == 0){
+            cla_data = "OFF";
+            cla_data = cla_data.fontcolor("red");
+          }else{
+            cla_data = "ON";
+            cla_data = cla_data.fontcolor("green");
+          }
+          if(inj_data == 0){
+            inj_data = "OFF";
+            inj_data = inj_data.fontcolor("red");
+          }else{
+            inj_data = "ON";
+            inj_data = inj_data.fontcolor("green");
+          }
+
+          document.getElementById("id_value").innerHTML = id_data;
+          document.getElementById("cla_value").innerHTML = cla_data;
+          document.getElementById("inj_value").innerHTML = inj_data;
+          document.getElementById("cyc_value").innerHTML = cyc_data;
+          document.getElementById("shoot_value").innerHTML = shoot_data;
         };
       </script>
       <style>
@@ -286,6 +286,40 @@ char html_reset[] PROGMEM = R"=====(
   </html>
 )=====";
 
+void webSocketEvent_server(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+
+    switch(type) {
+        case WStype_DISCONNECTED:
+            Serial.printf("[%u] Disconnected!\n", num);
+            break;
+        case WStype_CONNECTED:
+            {
+                IPAddress ip = webSocket_server.remoteIP(num);
+                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+        
+        // send message to client
+        //webSocket_server.sendTXT(num, "Connected");
+            }
+            break;
+        case WStype_TEXT:
+            Serial.printf("[%u] get Text: %s\n", num, payload);
+
+            // send message to client
+            // webSocket.sendTXT(num, "message here");
+
+            // send data to all connected clients
+            // webSocket.broadcastTXT("message here");
+            break;
+        case WStype_BIN:
+            Serial.printf("[%u] get binary length: %u\n", num, length);
+            hexdump(payload, length);
+
+            // send message to client
+            // webSocket.sendBIN(num, payload, length);
+            break;
+    }
+}
+
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     switch(type) {
         case WStype_DISCONNECTED:
@@ -367,6 +401,7 @@ void setup() {
           Serial.println("\nparsed json");
           strcpy(deviceId, json["deviceId"]);
           strcpy(WSaddress, json["WSaddress"]);
+          strcpy(chPort, json["Port"]);
         } else {
           Serial.println("failed to load json config");
         }
@@ -381,14 +416,17 @@ void setup() {
   // id/name placeholder/prompt default length
   WiFiManagerParameter customDeviceId("deviceId", "Device Id", deviceId, 10);
   WiFiManagerParameter customWSaddress("WSaddress", "Websocket Address", WSaddress, 16);
+  WiFiManagerParameter customPort("Port", "Port (ws//:xxx.xxx.xxx.xxx:'xxxx'/)", chPort, 5);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.addParameter(&customDeviceId);
   wifiManager.addParameter(&customWSaddress);
+  wifiManager.addParameter(&customPort);
   wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
   wifiManager.autoConnect();
   strcpy(deviceId, customDeviceId.getValue());
   strcpy(WSaddress, customWSaddress.getValue());
+  strcpy(chPort, customPort.getValue());
 
   if (shouldSaveConfig) {
     Serial.println("saving config");
@@ -396,6 +434,7 @@ void setup() {
     JsonObject& json = jsonBuffer.createObject();
     json["deviceId"] = deviceId;
     json["WSaddress"] = WSaddress;
+    json["Port"] = chPort;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
@@ -424,11 +463,21 @@ void setup() {
   server.on("/confirm_reset", ConfirmReset);
   server.onNotFound(handleNotFound);
   server.begin();
+
+  // Websocket Server Setup
+  Serial.println("[WSs] Starting WebSocket server ");
+  webSocket_server.begin();
+  webSocket_server.onEvent(webSocketEvent_server);
   
-  // Websocket Setup
-  Serial.print("[WSc] Try connect to WS server ");
-  Serial.println(WSaddress);
-  webSocket.begin(WSaddress, 7000, "/"); // Websocket server address
+  // Websocket Client Setup
+  Serial.print("[WSc] Try connect to WS server "); Serial.print(WSaddress);
+  Serial.print(":");
+  for(int i=0; i<=4; i++){
+    strPort += chPort[i];
+  }
+  WSport = strPort.toInt();
+  Serial.println(WSport);
+  webSocket.begin(WSaddress, WSport, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
@@ -527,14 +576,18 @@ void monitorCycleTime(){
         c_year = ptm->tm_year+1900;
         currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
         
-        sendws = true;
-    
         if (cycleTime <= maxCycleTime){
-          sendData=true;
+          //sendData = true;
+          numct = cycleTime;
+          lastActivity=millis();
         }
         else{
-          sendData=false;
+          //sendData = false;
+          cycleTime = 0;
+          numct = cycleTime;
         }
+        sendws = true;
+        
       }
       else {                      // Inject = OFF
         staInj = 0;
@@ -545,18 +598,42 @@ void monitorCycleTime(){
     laststateInject=stateInject;
   }
 
-  if(sendData == true){
-    numct = cycleTime;
-    //Serial.println(numct);
-    sendData=false;
-    lastActivity=millis();
-  }
+/*
+ * The code before
+ * After NTP get data ||
+                      \/
+                      
+          sendws = true;
+          if (cycleTime <= maxCycleTime){
+            sendData = true;
+          }
+          else{
+            cycleTime = 0;
+            sendData = false;
+          }
+        }
+        else {                      // Inject = OFF
+          staInj = 0;
+          // Serial.println("1,0");
+          sendws = true;
+        }
+      }
+      laststateInject=stateInject;
+    }
+  
+    if(sendData == true){
+      numct = cycleTime;
+      //Serial.println(numct);
+      sendData=false;
+      lastActivity=millis();
+    }
+*/
 }
 
 void loop() {
   server.handleClient();
-  // If disconnected from websocket will try reconnect every 5 seconds
-  webSocket.setReconnectInterval(5000);
+  webSocket_server.loop();
+  webSocket.setReconnectInterval(5000); // If disconnected from websocket will try reconnect every 5 seconds
   webSocket.loop();
   ArduinoOTA.handle();
   timeClient.update();
@@ -566,7 +643,9 @@ void loop() {
   // send data to websocket as JSON format
   if (sendws == true){
     JSON_Data = "{";
-    JSON_Data += "\"id\":";
+    JSON_Data += "\"action\":";
+    JSON_Data += "\"shoot\"";
+    JSON_Data += ",\"id\":";
     JSON_Data += deviceId;
     JSON_Data += ",\"cla\":";
     JSON_Data += staCla;
@@ -576,6 +655,10 @@ void loop() {
     JSON_Data += numct;
     JSON_Data += ",\"shoot\":";
     JSON_Data += shoot;
+    JSON_Data += ",\"heat\":";
+    JSON_Data += heaterON;
+    JSON_Data += ",\"pump\":";
+    JSON_Data += pumpON;
     JSON_Data += ",\"date\":\"";
     JSON_Data += currentDate;
     JSON_Data += "\"";
@@ -585,6 +668,7 @@ void loop() {
     JSON_Data += "}";
     Serial.println(JSON_Data);
     webSocket.sendTXT(JSON_Data);
+    webSocket_server.broadcastTXT(JSON_Data);
     sendws = false;
   }
 }
