@@ -50,7 +50,7 @@
         "type": "function",
         "z": "6e29ed9e7ed7f280",
         "name": "parseJSON",
-        "func": "var data = msg.payload;\nvar act = { payload: data.action };\nvar inj = { payload: data.inj };\nvar id = { payload: data.id };\nvar cyc = { payload: data.cyc };\nvar shoot = { payload: data.shoot };\nvar heat = { payload: data.heat };;\nvar pump = { payload: data.pump };;\nvar date = { payload: data.date };\nvar time = { payload: data.time };\nreturn [act, inj, id, cyc, shoot, heat, pump, date, time];",
+        "func": "var data = msg.payload;\nvar act = { payload: data.action };\nvar id = { payload: data.id };\nvar inj = { payload: data.inj };\nvar cyc = { payload: data.cyc };\nvar shoot = { payload: data.shoot };\nvar heat = { payload: data.heat };;\nvar pump = { payload: data.pump };;\nvar date = { payload: data.date };\nvar time = { payload: data.time };\nreturn [inj, act, id, cyc, shoot, heat, pump, date, time];",
         "outputs": 9,
         "noerr": 0,
         "initialize": "",
@@ -60,10 +60,10 @@
         "y": 300,
         "wires": [
             [
-                "66a365abf2120491"
+                "71e9309be9f93004"
             ],
             [
-                "71e9309be9f93004"
+                "66a365abf2120491"
             ],
             [
                 "4524eb0a1ae44956"
