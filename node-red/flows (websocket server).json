@@ -1,18 +1,5 @@
 [
     {
-        "id": "9ca83fe8376a5c9f",
-        "type": "mysql",
-        "z": "6e29ed9e7ed7f280",
-        "d": true,
-        "mydb": "7a91416b93f39491",
-        "name": "",
-        "x": 1110,
-        "y": 220,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "5e04799af7c5356f",
         "type": "debug",
         "z": "6e29ed9e7ed7f280",
@@ -113,26 +100,6 @@
         "wires": [
             [
                 "71e9309be9f93004"
-            ]
-        ]
-    },
-    {
-        "id": "5c6fd9397f5a28d7",
-        "type": "function",
-        "z": "6e29ed9e7ed7f280",
-        "d": true,
-        "name": "sendDB",
-        "func": "msg.topic = \"INSERT INTO nodered(mc_id, last_cycle_duration, shoot, timestamp)\" + \n    \"VALUES('\" + msg.payload.mc + \"','\" + msg.payload.ct + \"', '\" + msg.payload.shoot + \"','\" + msg.payload.time + \"')\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 940,
-        "y": 220,
-        "wires": [
-            [
-                "9ca83fe8376a5c9f"
             ]
         ]
     },
@@ -300,25 +267,8 @@
         "y": 240,
         "wires": [
             [
-                "5c6fd9397f5a28d7",
                 "6276c49aa07daa68",
                 "5e04799af7c5356f"
-            ]
-        ]
-    },
-    {
-        "id": "a519e98833f56d51",
-        "type": "websocket in",
-        "z": "6e29ed9e7ed7f280",
-        "d": true,
-        "name": "board:client",
-        "server": "",
-        "client": "9ae870f71b977241",
-        "x": 110,
-        "y": 80,
-        "wires": [
-            [
-                "5ebfbc9f7f777d07"
             ]
         ]
     },
@@ -329,7 +279,7 @@
         "name": "Websocket Server",
         "server": "2fa3cc6b3a238722",
         "client": "",
-        "x": 310,
+        "x": 130,
         "y": 80,
         "wires": [
             [
@@ -428,27 +378,9 @@
         "y": 340,
         "wires": [
             [
-                "4bdcb12986078455",
-                "85d3a3791f91783d"
+                "4bdcb12986078455"
             ]
         ]
-    },
-    {
-        "id": "85d3a3791f91783d",
-        "type": "debug",
-        "z": "6e29ed9e7ed7f280",
-        "name": "debug 4",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1000,
-        "y": 300,
-        "wires": []
     },
     {
         "id": "66a365abf2120491",
@@ -559,25 +491,6 @@
                 "67d90401a0b2987d"
             ]
         ]
-    },
-    {
-        "id": "7a91416b93f39491",
-        "type": "MySQLdatabase",
-        "name": "mySql",
-        "host": "localhost",
-        "port": "3306",
-        "db": "test",
-        "tz": "",
-        "charset": "UTF8"
-    },
-    {
-        "id": "9ae870f71b977241",
-        "type": "websocket-client",
-        "path": "ws://192.168.200.252:7000/",
-        "tls": "",
-        "wholemsg": "false",
-        "hb": "0",
-        "subprotocol": ""
     },
     {
         "id": "2fa3cc6b3a238722",
