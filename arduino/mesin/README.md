@@ -1,4 +1,4 @@
-WemosD1R2_v1.1
+WemosD1R2_v1.1 (in developing)
 
 Wemos Report
 
@@ -8,6 +8,7 @@ Wemos Report
 4. Over the Air (tapi terblokir dari jaringan kantor)
 5. Tiap board bisa menampilkan hanya cycle data masing-masing
 6. Tombol 'Reset' di webpage masing-masing board
+
 
 Masalah:
 (Opini sendiri) dengan sambungan API-HOTSPOT
@@ -22,3 +23,7 @@ Kemarin coba pake AP sendiri (tidak terhubung internet), OTA bisa dilakukan, Web
 karena tidak ada internet.
 
 Dugaan masalah berada pada segmen 1 (xxx.xxx.1.xxx) hasil diskusi dengan Pak Abe.
+
+
+Fixed Program:
+main.ino
