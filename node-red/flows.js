@@ -1,0 +1,634 @@
+[
+    {
+        "id": "156cb59063ed7842",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "parseJSON",
+        "func": "var data = msg.payload;\nvar act = { payload: data.action };\nvar id = { payload: data.id };\nvar inj = { payload: data.inj };\nvar cyc = { payload: data.cyc };\nvar shoot = { payload: data.shoot };\nvar heat = { payload: data.heat };;\nvar pump = { payload: data.pump };;\nvar date = { payload: data.date };\nvar time = { payload: data.time };\nvar ip = { payload: data.ip };\nreturn [inj, act, id, cyc, shoot, heat, pump, date, time, ip];",
+        "outputs": 10,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 130,
+        "y": 300,
+        "wires": [
+            [
+                "71e9309be9f93004"
+            ],
+            [
+                "66a365abf2120491"
+            ],
+            [
+                "4524eb0a1ae44956"
+            ],
+            [
+                "5b1ffa9dccc22b7d"
+            ],
+            [
+                "a7f0d104dede367e"
+            ],
+            [
+                "b99becedc2680da3"
+            ],
+            [
+                "e1bfbb06057a80a0"
+            ],
+            [
+                "15a9517a8774634c"
+            ],
+            [
+                "7ce74c4ed5beb6f2"
+            ],
+            [
+                "3a80180f8d8944ee"
+            ]
+        ]
+    },
+    {
+        "id": "b066b43239c4d326",
+        "type": "join",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": ",",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "8",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "num",
+        "reduceFixup": "",
+        "x": 550,
+        "y": 300,
+        "wires": [
+            [
+                "71e9309be9f93004"
+            ]
+        ]
+    },
+    {
+        "id": "4524eb0a1ae44956",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "id",
+        "func": "msg.topic = \"id\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 220,
+        "wires": [
+            [
+                "b066b43239c4d326"
+            ]
+        ]
+    },
+    {
+        "id": "a7f0d104dede367e",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "shoot",
+        "func": "msg.topic = \"shoot\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 300,
+        "wires": [
+            [
+                "b066b43239c4d326"
+            ]
+        ]
+    },
+    {
+        "id": "5b1ffa9dccc22b7d",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "cycletime",
+        "func": "msg.topic = \"cycletime\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 260,
+        "wires": [
+            [
+                "b066b43239c4d326"
+            ]
+        ]
+    },
+    {
+        "id": "fc8ee73086a19e5d",
+        "type": "rbe",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": true,
+        "property": "payload",
+        "topi": "topic",
+        "x": 510,
+        "y": 380,
+        "wires": [
+            [
+                "b066b43239c4d326"
+            ]
+        ]
+    },
+    {
+        "id": "7ce74c4ed5beb6f2",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "time",
+        "func": "msg.topic = \"time\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 460,
+        "wires": [
+            [
+                "50e0579380f2510f"
+            ]
+        ]
+    },
+    {
+        "id": "15a9517a8774634c",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "date",
+        "func": "msg.topic = \"date\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 420,
+        "wires": [
+            [
+                "50e0579380f2510f"
+            ]
+        ]
+    },
+    {
+        "id": "50e0579380f2510f",
+        "type": "join",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "mode": "custom",
+        "build": "string",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": " ",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "num",
+        "reduceFixup": "",
+        "x": 490,
+        "y": 440,
+        "wires": [
+            [
+                "fc8ee73086a19e5d"
+            ]
+        ]
+    },
+    {
+        "id": "71e9309be9f93004",
+        "type": "trigger",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "op1": "",
+        "op2": "0",
+        "op1type": "pay",
+        "op2type": "str",
+        "duration": "0",
+        "extend": false,
+        "overrideDelay": false,
+        "units": "ms",
+        "reset": "1",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 720,
+        "y": 240,
+        "wires": [
+            [
+                "6276c49aa07daa68"
+            ]
+        ]
+    },
+    {
+        "id": "6976075262caf9e1",
+        "type": "websocket in",
+        "z": "6e29ed9e7ed7f280",
+        "name": "Websocket Server",
+        "server": "2fa3cc6b3a238722",
+        "client": "",
+        "x": 110,
+        "y": 80,
+        "wires": [
+            [
+                "2809891b66aa65c3"
+            ]
+        ]
+    },
+    {
+        "id": "4bdcb12986078455",
+        "type": "http request",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://apik.adyawinsa.com/smsd/api/arduino.php",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1130,
+        "y": 180,
+        "wires": [
+            [
+                "bac1f18ed6c3fb50"
+            ]
+        ]
+    },
+    {
+        "id": "e1bfbb06057a80a0",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "pump",
+        "func": "msg.topic = \"p\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 380,
+        "wires": [
+            [
+                "b066b43239c4d326"
+            ]
+        ]
+    },
+    {
+        "id": "b99becedc2680da3",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "heat",
+        "func": "msg.topic = \"h\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 340,
+        "wires": [
+            [
+                "b066b43239c4d326"
+            ]
+        ]
+    },
+    {
+        "id": "bac1f18ed6c3fb50",
+        "type": "debug",
+        "z": "6e29ed9e7ed7f280",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1280,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "6276c49aa07daa68",
+        "type": "json",
+        "z": "6e29ed9e7ed7f280",
+        "d": true,
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 970,
+        "y": 180,
+        "wires": [
+            [
+                "4bdcb12986078455"
+            ]
+        ]
+    },
+    {
+        "id": "66a365abf2120491",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "action",
+        "func": "msg.topic = \"action\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 180,
+        "wires": [
+            [
+                "b066b43239c4d326"
+            ]
+        ]
+    },
+    {
+        "id": "ecde8bfb9a08a235",
+        "type": "inject",
+        "z": "6e29ed9e7ed7f280",
+        "name": "101",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"last10\",\"id\":1000101}",
+        "payloadType": "json",
+        "x": 790,
+        "y": 300,
+        "wires": [
+            [
+                "67d90401a0b2987d"
+            ]
+        ]
+    },
+    {
+        "id": "67d90401a0b2987d",
+        "type": "json",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 950,
+        "y": 240,
+        "wires": [
+            [
+                "4bdcb12986078455"
+            ]
+        ]
+    },
+    {
+        "id": "94f92f540f3d2889",
+        "type": "inject",
+        "z": "6e29ed9e7ed7f280",
+        "name": "102",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"last10\",\"id\":1000102}",
+        "payloadType": "json",
+        "x": 790,
+        "y": 340,
+        "wires": [
+            [
+                "67d90401a0b2987d"
+            ]
+        ]
+    },
+    {
+        "id": "8746bab386a40f1e",
+        "type": "inject",
+        "z": "6e29ed9e7ed7f280",
+        "name": "067",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"last10\",\"id\":1000067}",
+        "payloadType": "json",
+        "x": 790,
+        "y": 380,
+        "wires": [
+            [
+                "67d90401a0b2987d"
+            ]
+        ]
+    },
+    {
+        "id": "3fdf8ba30820dcaa",
+        "type": "trigger",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "op1": "",
+        "op2": "",
+        "op1type": "nul",
+        "op2type": "payl",
+        "duration": "1",
+        "extend": false,
+        "overrideDelay": false,
+        "units": "min",
+        "reset": "",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 810,
+        "y": 80,
+        "wires": [
+            [
+                "6276c49aa07daa68"
+            ]
+        ]
+    },
+    {
+        "id": "2809891b66aa65c3",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "parse shoot and temp",
+        "func": "var data = JSON.parse(msg.payload);\nvar obj = data.action;\nvar a;\nvar b;\nif (obj == \"temp\") {\n    a = { payload: data };\n} else if (obj == \"shoot\") {\n    b = { payload: data };\n}\nreturn [a, b];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 80,
+        "wires": [
+            [
+                "9408059bfc92ba7f"
+            ],
+            [
+                "156cb59063ed7842"
+            ]
+        ]
+    },
+    {
+        "id": "3a80180f8d8944ee",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "ip",
+        "func": "msg.topic = \"ip\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 500,
+        "wires": [
+            [
+                "b066b43239c4d326"
+            ]
+        ]
+    },
+    {
+        "id": "4d0e1fdfca13f707",
+        "type": "inject",
+        "z": "6e29ed9e7ed7f280",
+        "name": "078",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"last10\",\"id\":1000078}",
+        "payloadType": "json",
+        "x": 790,
+        "y": 420,
+        "wires": [
+            [
+                "67d90401a0b2987d"
+            ]
+        ]
+    },
+    {
+        "id": "c9d7026bb43fb260",
+        "type": "inject",
+        "z": "6e29ed9e7ed7f280",
+        "name": "059",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"last10\",\"id\":1000059}",
+        "payloadType": "json",
+        "x": 790,
+        "y": 460,
+        "wires": [
+            [
+                "67d90401a0b2987d"
+            ]
+        ]
+    },
+    {
+        "id": "9408059bfc92ba7f",
+        "type": "function",
+        "z": "6e29ed9e7ed7f280",
+        "name": "split by id",
+        "func": "var data = msg.payload;\nvar obj = data.id;\nvar a;\nvar b;\nif (obj == \"1000059\") {\n    a = { payload: data };\n} else if (obj == \"1000078\") {\n    b = { payload: data };\n}\nreturn [a, b];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 80,
+        "wires": [
+            [
+                "3fdf8ba30820dcaa"
+            ],
+            [
+                "21b192536884f4a8"
+            ]
+        ]
+    },
+    {
+        "id": "21b192536884f4a8",
+        "type": "trigger",
+        "z": "6e29ed9e7ed7f280",
+        "name": "",
+        "op1": "",
+        "op2": "",
+        "op1type": "nul",
+        "op2type": "payl",
+        "duration": "1",
+        "extend": false,
+        "overrideDelay": false,
+        "units": "min",
+        "reset": "",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 810,
+        "y": 120,
+        "wires": [
+            [
+                "6276c49aa07daa68"
+            ]
+        ]
+    },
+    {
+        "id": "2fa3cc6b3a238722",
+        "type": "websocket-listener",
+        "path": "/",
+        "wholemsg": "false"
+    }
+]
