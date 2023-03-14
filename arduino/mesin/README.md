@@ -2,7 +2,7 @@
 mesin.ino
 
 ## Changelog:
-# Always reconnect Wifi
+### Always reconnect Wifi
     Ability to reconnect to Wifi if disconnected, without entering Wifi Manager Portal.
     (in some long time, if still disconnected, it will open the Wifi Manager Portal)
 
