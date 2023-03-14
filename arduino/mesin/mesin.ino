@@ -405,12 +405,6 @@ void saveConfigCallback() {
 void setup() {
   Serial.begin(115200);
 
-  for(uint8_t t = 4; t > 0; t--) {
-        Serial.printf("[SETUP] BOOT WAIT %d...\n", t);
-        Serial.flush();
-        delay(1000);
-  }
-
   Serial.println("Mounting FS...");    //read configuration from FS json
 
   if (SPIFFS.begin()) {
@@ -459,7 +453,7 @@ void setup() {
   wifiManager.addParameter(&customWSaddress);
   wifiManager.addParameter(&customPort);
   //wifiManager.resetSettings();
-  // AP esp if can't connect to wifi (each board mac)  
+  // AP esp if can't connect to wifi  
   wifiManager.autoConnect();
   strcpy(deviceId, customDeviceId.getValue());
   strcpy(deviceName, customDeviceName.getValue());
@@ -558,9 +552,9 @@ void setup() {
   //Semi Auto Machine : By Pass piClam (always ON) used for New Machine (HAITIAN) 
   stateClamp = digitalRead(pinClam);
   semiAuto=false;
-  if (stateClamp==HIGH){
-    semiAuto=true;
-  }
+  // if (stateClamp==HIGH){
+  //   semiAuto=true;
+  // }
   // Init First Run
   //upTime = millis();
   //runtime = millis();
@@ -613,6 +607,7 @@ void monitorCycleTime(){
         cycleTime=(timenow-lastInject)/1000;
         lastInject = timenow;
 
+        
         runtime += cycleTime;
         run_second = runtime;
         run_minute = run_second / 60;
@@ -621,6 +616,8 @@ void monitorCycleTime(){
         run_second %= 60;
         run_minute %= 60;
         run_hour %= 24;
+        //String totalrun = String(run_day) + ":" + String(run_hour) + ":" + String(run_minute);
+        
 
         // NTP get data
         time_t epochTime = timeClient.getEpochTime();
@@ -654,36 +651,53 @@ void monitorCycleTime(){
     laststateInject=stateInject;
   }
 
-/*
- * The previous code
- * Put after NTP get data ||
-                          \/
-                      
-          sendws = true;
-          if (cycleTime <= maxCycleTime){
-            sendData = true;
-          }
-          else{
-            cycleTime = 0;
-            sendData = false;
-          }
-        }
-        else {                      // Inject = OFF
-          staInj = 0;
-          // Serial.println("1,0");
-          sendws = true;
-        }
-      }
-      laststateInject=stateInject;
-    }
-  
-    if(sendData == true){
-      numct = cycleTime;
-      //Serial.println(numct);
-      sendData=false;
-      lastActivity=millis();
-    }
-*/
+
+}
+
+void senddata(){
+  JSON_Data = "{";
+  JSON_Data += "\"action\":";
+  JSON_Data += "\"shoot\"";
+  JSON_Data += ",\"id\":";
+  JSON_Data += deviceId;
+  JSON_Data += ",\"name\":\"";
+  JSON_Data += deviceName;
+  JSON_Data += "\"";
+  JSON_Data += ",\"cla\":";
+  JSON_Data += staCla;
+  JSON_Data += ",\"inj\":";
+  JSON_Data += staInj;
+  JSON_Data += ",\"cyc\":";
+  JSON_Data += numct;
+  JSON_Data += ",\"shoot\":";
+  JSON_Data += shoot;
+  JSON_Data += ",\"ip\":\"";
+  JSON_Data += ipAddress;
+  JSON_Data += "\"";
+  JSON_Data += ",\"heat\":";
+  JSON_Data += heaterON;
+  JSON_Data += ",\"pump\":";
+  JSON_Data += pumpON;
+  JSON_Data += ",\"day\":";
+  JSON_Data += run_day;
+  JSON_Data += ",\"hour\":";
+  JSON_Data += run_hour;
+  JSON_Data += ",\"minute\":";
+  JSON_Data += run_minute;
+  JSON_Data += ",\"date\":\"";
+  JSON_Data += currentDate;
+  JSON_Data += "\"";
+  JSON_Data += ",\"time\":\"";
+  JSON_Data += formattedTime;
+  JSON_Data += "\"";
+  JSON_Data += ",\"ver\":\"";
+  JSON_Data += versionNum;
+  JSON_Data += "\"";
+  JSON_Data += "}";
+  Serial.println(JSON_Data);
+  webSocket.sendTXT(JSON_Data);
+  webSocket_server.broadcastTXT(JSON_Data);
+  sendws = false;  
 }
 
 void loop() {
@@ -694,50 +708,22 @@ void loop() {
   ArduinoOTA.handle();
   timeClient.update();
 
+  if (!WiFi.isConnected()) {
+    Serial.println("WiFi disconnected, reconnecting...");
+    // connect to saved WiFi credentials
+    WiFi.begin();
+    // wait for connection
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+      Serial.println("Connecting to WiFi...");
+    }
+    Serial.println("Connected to WiFi");
+  }
+
   monitorCycleTime();
-  //getRuntime();
 
   // send data to websocket as JSON format
   if (sendws == true){
-    JSON_Data = "{";
-    JSON_Data += "\"action\":";
-    JSON_Data += "\"shoot\"";
-    JSON_Data += ",\"id\":";
-    JSON_Data += deviceId;
-    JSON_Data += ",\"name\":\"";
-    JSON_Data += deviceName;
-    JSON_Data += "\"";
-    JSON_Data += ",\"cla\":";
-    JSON_Data += staCla;
-    JSON_Data += ",\"inj\":";
-    JSON_Data += staInj;
-    JSON_Data += ",\"cyc\":";
-    JSON_Data += numct;
-    JSON_Data += ",\"shoot\":";
-    JSON_Data += shoot;
-    JSON_Data += ",\"ip\":\"";
-    JSON_Data += ipAddress;
-    JSON_Data += "\"";
-    JSON_Data += ",\"heat\":";
-    JSON_Data += heaterON;
-    JSON_Data += ",\"pump\":";
-    JSON_Data += pumpON;
-    JSON_Data += ",\"day\":";
-    JSON_Data += run_day;
-    JSON_Data += ",\"hour\":";
-    JSON_Data += run_hour;
-    JSON_Data += ",\"minute\":";
-    JSON_Data += run_minute;
-    JSON_Data += ",\"date\":\"";
-    JSON_Data += currentDate;
-    JSON_Data += "\"";
-    JSON_Data += ",\"time\":\"";
-    JSON_Data += formattedTime;
-    JSON_Data += "\"";
-    JSON_Data += "}";
-    Serial.println(JSON_Data);
-    webSocket.sendTXT(JSON_Data);
-    webSocket_server.broadcastTXT(JSON_Data);
-    sendws = false;
+    senddata();
   }
 }
