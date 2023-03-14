@@ -289,13 +289,6 @@ void setup() {
           strcpy(WSaddress, json["WSaddress"]);
           strcpy(chPort, json["Port"]);
           strcpy(loc, json["Loc"]);
-
-          // strcpy(redmin, json["redmin"]);
-          // strcpy(redmax, json["redmax"]);
-          // strcpy(blumin, json["blumin"]);
-          // strcpy(blumax, json["blumax"]);
-          // strcpy(gremin, json["gremin"]);
-          // strcpy(gremax, json["gremax"]);
         } else {
           Serial.println("failed to load json config");
         }
@@ -315,24 +308,12 @@ void setup() {
   WiFiManagerParameter customLoc("loc", "Location", loc, 50);
   WiFiManagerParameter customWSaddress("WSaddress", "Websocket Address", WSaddress, 16);
   WiFiManagerParameter customPort("Port", "Port (ws//:xxx.xxx.xxx.xxx:'xxxx'/)", chPort, 5);
-  // WiFiManagerParameter customGremin("gremin", "Green min value", gremin, 2);
-  // WiFiManagerParameter customGremax("gremax", "Green max value", gremax, 2);
-  // WiFiManagerParameter customBlumin("blumin", "Yellow min value", blumin, 2);
-  // WiFiManagerParameter customBlumax("blumax", "Yellow max value", blumax, 2);
-  // WiFiManagerParameter customRedmin("redmin", "Red min value", redmin, 2);
-  // WiFiManagerParameter customRedmax("redmax", "Red max value", redmax, 2);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.addParameter(&customDeviceId);
   wifiManager.addParameter(&customDeviceName);
   wifiManager.addParameter(&customLoc);
   wifiManager.addParameter(&customWSaddress);
   wifiManager.addParameter(&customPort);
-  // wifiManager.addParameter(&customGremin);
-  // wifiManager.addParameter(&customGremax);
-  // wifiManager.addParameter(&customBlumin);
-  // wifiManager.addParameter(&customBlumax);
-  // wifiManager.addParameter(&customRedmin);
-  // wifiManager.addParameter(&customRedmax);
   // wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
   wifiManager.autoConnect();
@@ -341,12 +322,6 @@ void setup() {
   strcpy(loc, customLoc.getValue());
   strcpy(WSaddress, customWSaddress.getValue());
   strcpy(chPort, customPort.getValue());
-  // strcpy(redmin, customRedmin.getValue());
-  // strcpy(redmax, customRedmax.getValue());
-  // strcpy(blumin, customBlumin.getValue());
-  // strcpy(blumax, customBlumax.getValue());
-  // strcpy(gremin, customGremin.getValue());
-  // strcpy(gremax, customGremax.getValue());
 
   if (shouldSaveConfig) {
     Serial.println("saving config");
@@ -357,12 +332,6 @@ void setup() {
     json["WSaddress"] = WSaddress;
     json["Port"] = chPort;
     json["Loc"] = loc;
-    // json["redmin"] = redmin;
-    // json["redmax"] = redmax;
-    // json["blumin"] = blumin;
-    // json["blumax"] = blumax;
-    // json["gremin"] = gremin;
-    // json["gremax"] = gremax;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
