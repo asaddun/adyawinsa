@@ -1,29 +1,22 @@
-WemosD1R2_v1.1 (in developing)
+mesin.ino
 
-Wemos Report
+Changelog:
+
+6. Always reconnect Wifi
+    Ability to reconnect to Wifi if disconnected, without entering Wifi Manager Portal.
+    (in some long time, if still disconnected, it will open the Wifi Manager Portal)
+
+5. 'Reset' button at dashboard
+    Ability to reset WIFI Credential to make changes in Wifi Manager Portal.
+
+4. Over the Air
+    Ability to upload code without connect the data cable, Limited by IP Segment.
+
+3. Network Protocol Time
+    Request Network Time to be send as data.
+
+2. WiFi Manager
+    Adding Wifi Manager to easy connect to WIFI and set parameter of machine ID in Wifi Manager Portal.
 
 1. Websocket Client & Server
-2. WiFi Manager (custom parameter di bagian setup)
-3. Network Protocol Time
-4. Over the Air (tapi terblokir dari jaringan kantor)
-5. Tiap board bisa menampilkan hanya cycle data masing-masing
-6. Tombol 'Reset' di webpage masing-masing board
-
-
-Masalah:
-(Opini sendiri) dengan sambungan API-HOTSPOT
-1. Bila board terhubung dengan IP 192.168.1.xxx, board ga bisa nyambung ke websocket server (laptop),
-jadi saat IP board 192.168.10.xxx board bisa nyambung ke websocket server.
-2. Bila IP laptop 192.168.1.xxx dan board juga 192.168.1.xxx, maka tidak bisa melakukan OTA (over the air) dengan board, jika kedua IP
-selain 192.168.1.xxx maka bisa melakukan OTA.
-3. IP board 192.168.1.xxx maka tidak bisa buka webpage milik board (Webserver), IP 192.168.10.xxx bisa buka webpage
-milik board (Webserver).
-
-Kemarin coba pake AP sendiri (tidak terhubung internet), OTA bisa dilakukan, Websocket bisa terhubung tapi langsung terputus
-karena tidak ada internet.
-
-Dugaan masalah berada pada segmen 1 (xxx.xxx.1.xxx) hasil diskusi dengan Pak Abe.
-
-
-Fixed Program:
-main.ino
+    Adding Websocket to communicate the data to server and dashboard.
