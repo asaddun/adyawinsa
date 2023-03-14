@@ -9,14 +9,14 @@ mesin.ino
 #### 5. 'Reset' button at dashboard
     Ability to reset WIFI Credential to make changes in Wifi Manager Portal.
 
-#### Over the Air
+#### 4. Over the Air
     Ability to upload code without connect the data cable, Limited by IP Segment.
 
-#### Network Protocol Time
+#### 3. Network Protocol Time
     Request Network Time to be send as data.
 
-#### WiFi Manager
+#### 2. WiFi Manager
     Adding Wifi Manager to easy connect to WIFI and set parameter of machine ID in Wifi Manager Portal.
 
-#### Websocket Client & Server
+#### 1. Websocket Client & Server
     Adding Websocket to communicate the data to server and dashboard.
