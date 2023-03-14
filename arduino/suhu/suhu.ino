@@ -12,7 +12,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-#define ONE_WIRE_BUS D5  //D5 pin
+#define ONE_WIRE_BUS 14  // D5
 
 WiFiManager wifiManager;
 ESP8266WebServer server(80);
@@ -21,13 +21,14 @@ WebSocketsClient webSocket;
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org");
+NTPClient timeClient(ntpUDP, "id.pool.ntp.org");
 
 int run_second, run_minute, run_hour, run_day;
 String JSON_Data;
 boolean sendws = false, wifiConnected = true;
 bool shouldSaveConfig = false;
 char deviceId[10], deviceName[50], WSaddress[16], chPort[5], loc[50];
+// char blumin[2], blumax[2], gremin[2], gremax[2], redmin[2], redmax[2];
 String strPort;
 int WSport;
 String ipAddress;
@@ -123,8 +124,10 @@ char html_template[] PROGMEM = R"=====(
           const gaugeElement = document.querySelector(".gauge");
 
           function setGaugeValue(gauge, value) {
-            if (value < 0 || value > 100) {
-                return;
+            if (value < 0 || value > 100 || value == -127) {
+              gauge.querySelector(".gauge_cover").textContent = `Error`;
+              gauge.querySelector(".gauge_fill").style.transform = `rotate(0deg)`;
+              return;
             }
 
             var degree = value * 3.6;
@@ -261,12 +264,6 @@ void saveConfigCallback() {
 void setup() {
   Serial.begin(115200);
 
-  for(uint8_t t = 4; t > 0; t--) {
-        Serial.printf("[SETUP] BOOT WAIT %d...\n", t);
-        Serial.flush();
-        delay(1000);
-  }
-
   Serial.println("Mounting FS...");    //read configuration from FS json
 
   if (SPIFFS.begin()) {
@@ -292,6 +289,13 @@ void setup() {
           strcpy(WSaddress, json["WSaddress"]);
           strcpy(chPort, json["Port"]);
           strcpy(loc, json["Loc"]);
+
+          // strcpy(redmin, json["redmin"]);
+          // strcpy(redmax, json["redmax"]);
+          // strcpy(blumin, json["blumin"]);
+          // strcpy(blumax, json["blumax"]);
+          // strcpy(gremin, json["gremin"]);
+          // strcpy(gremax, json["gremax"]);
         } else {
           Serial.println("failed to load json config");
         }
@@ -311,12 +315,24 @@ void setup() {
   WiFiManagerParameter customLoc("loc", "Location", loc, 50);
   WiFiManagerParameter customWSaddress("WSaddress", "Websocket Address", WSaddress, 16);
   WiFiManagerParameter customPort("Port", "Port (ws//:xxx.xxx.xxx.xxx:'xxxx'/)", chPort, 5);
+  // WiFiManagerParameter customGremin("gremin", "Green min value", gremin, 2);
+  // WiFiManagerParameter customGremax("gremax", "Green max value", gremax, 2);
+  // WiFiManagerParameter customBlumin("blumin", "Yellow min value", blumin, 2);
+  // WiFiManagerParameter customBlumax("blumax", "Yellow max value", blumax, 2);
+  // WiFiManagerParameter customRedmin("redmin", "Red min value", redmin, 2);
+  // WiFiManagerParameter customRedmax("redmax", "Red max value", redmax, 2);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.addParameter(&customDeviceId);
   wifiManager.addParameter(&customDeviceName);
   wifiManager.addParameter(&customLoc);
   wifiManager.addParameter(&customWSaddress);
   wifiManager.addParameter(&customPort);
+  // wifiManager.addParameter(&customGremin);
+  // wifiManager.addParameter(&customGremax);
+  // wifiManager.addParameter(&customBlumin);
+  // wifiManager.addParameter(&customBlumax);
+  // wifiManager.addParameter(&customRedmin);
+  // wifiManager.addParameter(&customRedmax);
   // wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
   wifiManager.autoConnect();
@@ -325,6 +341,12 @@ void setup() {
   strcpy(loc, customLoc.getValue());
   strcpy(WSaddress, customWSaddress.getValue());
   strcpy(chPort, customPort.getValue());
+  // strcpy(redmin, customRedmin.getValue());
+  // strcpy(redmax, customRedmax.getValue());
+  // strcpy(blumin, customBlumin.getValue());
+  // strcpy(blumax, customBlumax.getValue());
+  // strcpy(gremin, customGremin.getValue());
+  // strcpy(gremax, customGremax.getValue());
 
   if (shouldSaveConfig) {
     Serial.println("saving config");
@@ -335,6 +357,12 @@ void setup() {
     json["WSaddress"] = WSaddress;
     json["Port"] = chPort;
     json["Loc"] = loc;
+    // json["redmin"] = redmin;
+    // json["redmax"] = redmax;
+    // json["blumin"] = blumin;
+    // json["blumax"] = blumax;
+    // json["gremin"] = gremin;
+    // json["gremax"] = gremax;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
@@ -400,7 +428,10 @@ void setup() {
 
   // NTP Setup
   timeClient.begin();
-  timeClient.setTimeOffset(25202); // GMT +7 (60(sec) * 60(min) * 7(hour))
+  timeClient.setTimeOffset(25200); // GMT +7 (60(sec) * 60(min) * 7(hour))
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
   
   sensors.begin();
 
@@ -417,6 +448,19 @@ void loop() {
   timeClient.update();
   sensors.requestTemperatures();
   float data = sensors.getTempCByIndex(0);
+
+  if (!WiFi.isConnected()) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    Serial.println("WiFi disconnected, reconnecting...");
+    // connect to saved WiFi credentials
+    WiFi.begin();
+    // wait for connection
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+      Serial.println("Connecting to WiFi...");
+    }
+    Serial.println("Connected to WiFi");
+  }
 
   // NTP get data
   time_t epochTime = timeClient.getEpochTime();
