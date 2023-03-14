@@ -2,11 +2,11 @@
 mesin.ino
 
 ## Changelog:
-#### Always reconnect Wifi
+#### 6. Always reconnect Wifi
     Ability to reconnect to Wifi if disconnected, without entering Wifi Manager Portal.
     (in some long time, if still disconnected, it will open the Wifi Manager Portal)
 
-#### 'Reset' button at dashboard
+#### 5. 'Reset' button at dashboard
     Ability to reset WIFI Credential to make changes in Wifi Manager Portal.
 
 #### Over the Air
