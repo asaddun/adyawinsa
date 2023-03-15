@@ -1,3 +1,10 @@
-## Files for Internship
+## Sensor for Monitoring
+Code for sensor for monitoring injection machine and cooling tower temperature.
 
-Code for sensor both (machine and temperature) in "arduino" directory.
+## Requirement
+- Node-RED
+
+## Instalation
+...
+aaa
+...
