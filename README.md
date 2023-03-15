@@ -5,7 +5,8 @@ Code for sensor for monitoring injection machine and cooling tower temperature.
 - Node-RED
 
 ## Instalation
-To install Node-RED, open command prompt the type
+To install Node-RED, open command prompt then type
 ```
 npm install -g --unsafe-perm node-red
 ```
+then import the flows.json in `node-red` directory
