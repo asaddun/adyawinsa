@@ -57,8 +57,8 @@ int laststateInject = 0,laststateClamp = 0;     // previous state of the button
 boolean semiAuto=false; // True: Single Sensor for Clam and Injection
 
 char buff[64];
-char versi[6]="4.0.0"; // System Version
-String versionNum="4.0.0"; // System Version
+// char versi[6]="4.0.0"; // System Version
+String versionNum="4.0.1"; // System Version
 //char mcid[8]="1000078"; // A_Asset_ID or Machine ID API 78
 
 unsigned long timenow;
@@ -718,6 +718,7 @@ void loop() {
       Serial.println("Connecting to WiFi...");
     }
     Serial.println("Connected to WiFi");
+    ipAddress = WiFi.localIP().toString();
   }
 
   monitorCycleTime();
