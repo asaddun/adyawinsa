@@ -1,17 +1,34 @@
 [
     {
+        "id": "ef150608c0e07e9d",
+        "type": "debug",
+        "z": "84635b615d072933",
+        "name": "debug 1",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 980,
+        "y": 60,
+        "wires": []
+    },
+    {
         "id": "aa0690eb18cdb2b8",
         "type": "function",
         "z": "84635b615d072933",
         "name": "parseJSON",
-        "func": "var data = msg.payload;\nvar act = { payload: data.action };\nvar id = { payload: data.id };\nvar inj = { payload: data.inj };\nvar cyc = { payload: data.cyc };\nvar shoot = { payload: data.shoot };\nvar heat = { payload: data.heat };;\nvar pump = { payload: data.pump };;\nvar date = { payload: data.date };\nvar time = { payload: data.time };\nvar ip = { payload: data.ip };\nreturn [inj, act, id, cyc, shoot, heat, pump, date, time, ip];",
-        "outputs": 10,
+        "func": "var data = msg.payload;\nvar act = { payload: data.action };\nvar id = { payload: data.id };\nvar inj = { payload: data.inj };\nvar cyc = { payload: data.cyc };\nvar ip = { payload: data.ip };\nreturn [inj, act, id, cyc, ip];",
+        "outputs": 5,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 110,
-        "y": 400,
+        "x": 130,
+        "y": 360,
         "wires": [
             [
                 "9e54df47d7b0a286"
@@ -24,21 +41,6 @@
             ],
             [
                 "321b15b0afbff1f5"
-            ],
-            [
-                "45b01045bfa25368"
-            ],
-            [
-                "ec062e3d764195ee"
-            ],
-            [
-                "4a7b04001d7dc0ad"
-            ],
-            [
-                "3ea1bbc8e0d93fb5"
-            ],
-            [
-                "4a9f913d508398d4"
             ],
             [
                 "f31fd30afd1b2244"
@@ -59,7 +61,7 @@
         "joinerType": "str",
         "accumulate": false,
         "timeout": "",
-        "count": "8",
+        "count": "4",
         "reduceRight": false,
         "reduceExp": "",
         "reduceInit": "",
@@ -85,26 +87,7 @@
         "finalize": "",
         "libs": [],
         "x": 310,
-        "y": 320,
-        "wires": [
-            [
-                "1593e7e8071975e1"
-            ]
-        ]
-    },
-    {
-        "id": "45b01045bfa25368",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "shoot",
-        "func": "msg.topic = \"shoot\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 400,
+        "y": 360,
         "wires": [
             [
                 "1593e7e8071975e1"
@@ -123,96 +106,10 @@
         "finalize": "",
         "libs": [],
         "x": 320,
-        "y": 360,
+        "y": 400,
         "wires": [
             [
                 "1593e7e8071975e1"
-            ]
-        ]
-    },
-    {
-        "id": "602fc9242dc92433",
-        "type": "rbe",
-        "z": "84635b615d072933",
-        "name": "",
-        "func": "rbe",
-        "gap": "",
-        "start": "",
-        "inout": "out",
-        "septopics": true,
-        "property": "payload",
-        "topi": "topic",
-        "x": 490,
-        "y": 480,
-        "wires": [
-            [
-                "1593e7e8071975e1"
-            ]
-        ]
-    },
-    {
-        "id": "4a9f913d508398d4",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "time",
-        "func": "msg.topic = \"time\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 560,
-        "wires": [
-            [
-                "5e9e7a45b7ce3bd7"
-            ]
-        ]
-    },
-    {
-        "id": "3ea1bbc8e0d93fb5",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "date",
-        "func": "msg.topic = \"date\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 520,
-        "wires": [
-            [
-                "5e9e7a45b7ce3bd7"
-            ]
-        ]
-    },
-    {
-        "id": "5e9e7a45b7ce3bd7",
-        "type": "join",
-        "z": "84635b615d072933",
-        "name": "",
-        "mode": "custom",
-        "build": "string",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": " ",
-        "joinerType": "str",
-        "accumulate": false,
-        "timeout": "",
-        "count": "2",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "num",
-        "reduceFixup": "",
-        "x": 470,
-        "y": 540,
-        "wires": [
-            [
-                "602fc9242dc92433"
             ]
         ]
     },
@@ -233,7 +130,7 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 700,
+        "x": 580,
         "y": 340,
         "wires": [
             [
@@ -282,44 +179,6 @@
         ]
     },
     {
-        "id": "4a7b04001d7dc0ad",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "pump",
-        "func": "msg.topic = \"p\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 480,
-        "wires": [
-            [
-                "1593e7e8071975e1"
-            ]
-        ]
-    },
-    {
-        "id": "ec062e3d764195ee",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "heat",
-        "func": "msg.topic = \"h\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 440,
-        "wires": [
-            [
-                "1593e7e8071975e1"
-            ]
-        ]
-    },
-    {
         "id": "ee325b3483d6fa34",
         "type": "debug",
         "z": "84635b615d072933",
@@ -364,7 +223,7 @@
         "finalize": "",
         "libs": [],
         "x": 310,
-        "y": 280,
+        "y": 320,
         "wires": [
             [
                 "1593e7e8071975e1"
@@ -420,6 +279,23 @@
         ]
     },
     {
+        "id": "6c2671d5939e6b53",
+        "type": "debug",
+        "z": "84635b615d072933",
+        "name": "debug 2",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 800,
+        "y": 340,
+        "wires": []
+    },
+    {
         "id": "f31fd30afd1b2244",
         "type": "function",
         "z": "84635b615d072933",
@@ -431,7 +307,7 @@
         "finalize": "",
         "libs": [],
         "x": 310,
-        "y": 600,
+        "y": 440,
         "wires": [
             [
                 "1593e7e8071975e1"
