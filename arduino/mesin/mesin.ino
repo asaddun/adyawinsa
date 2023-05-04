@@ -1,4 +1,4 @@
-/**
+/*
  * New Script for WeMos D1 R2 with ESP 8266 
  * Based on MC_Arduino v3.1.1 -- LAST USED VERSION : APIK@STMI 2 JUNI 2021
  * Capability:
@@ -428,7 +428,7 @@ void setup() {
           strcpy(deviceId, json["deviceId"]);
           strcpy(deviceName, json["deviceName"]);
           strcpy(WSaddress, json["WSaddress"]);
-          strcpy(chPort, json["Port"]);
+          // strcpy(chPort, json["Port"]);
         } else {
           Serial.println("failed to load json config");
         }
@@ -446,19 +446,19 @@ void setup() {
   WiFiManagerParameter customDeviceId("deviceId", "Device Id", deviceId, 10);
   WiFiManagerParameter customDeviceName("deviceName", "Device Name", deviceName, 50);
   WiFiManagerParameter customWSaddress("WSaddress", "Websocket Address", WSaddress, 16);
-  WiFiManagerParameter customPort("Port", "Port (ws//:xxx.xxx.xxx.xxx:'xxxx'/)", chPort, 5);
+  // WiFiManagerParameter customPort("Port", "Port (ws//:xxx.xxx.xxx.xxx:'xxxx'/)", chPort, 5);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.addParameter(&customDeviceId);
   wifiManager.addParameter(&customDeviceName);
   wifiManager.addParameter(&customWSaddress);
-  wifiManager.addParameter(&customPort);
+  // wifiManager.addParameter(&customPort);
   //wifiManager.resetSettings();
   // AP esp if can't connect to wifi  
   wifiManager.autoConnect();
   strcpy(deviceId, customDeviceId.getValue());
   strcpy(deviceName, customDeviceName.getValue());
   strcpy(WSaddress, customWSaddress.getValue());
-  strcpy(chPort, customPort.getValue());
+  // strcpy(chPort, customPort.getValue());
 
   if (shouldSaveConfig) {
     Serial.println("saving config");
@@ -467,7 +467,7 @@ void setup() {
     json["deviceId"] = deviceId;
     json["deviceName"] = deviceName;
     json["WSaddress"] = WSaddress;
-    json["Port"] = chPort;
+    // json["Port"] = chPort;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
@@ -506,13 +506,13 @@ void setup() {
   // Websocket Client Setup
   Serial.print("[WSc] Try connect to WS server ");
   Serial.print(WSaddress);
-  Serial.print(":");
+  Serial.println(":1880");
   for(int i=0; i<=4; i++){
     strPort += chPort[i];
   }
   WSport = strPort.toInt();
-  Serial.println(WSport);
-  webSocket.begin(WSaddress, WSport, "/"); // Websocket server address
+  // Serial.println(WSport);
+  webSocket.begin(WSaddress, 1880, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
@@ -602,12 +602,11 @@ void monitorCycleTime(){
         staInj = 1;
         shoot += 1;
         // Serial.println("1,1,");
-        
+ 
         timenow=millis();
         cycleTime=(timenow-lastInject)/1000;
         lastInject = timenow;
-
-        
+ 
         runtime += cycleTime;
         run_second = runtime;
         run_minute = run_second / 60;
@@ -618,7 +617,6 @@ void monitorCycleTime(){
         run_hour %= 24;
         //String totalrun = String(run_day) + ":" + String(run_hour) + ":" + String(run_minute);
         
-
         // NTP get data
         time_t epochTime = timeClient.getEpochTime();
         formattedTime = timeClient.getFormattedTime();
@@ -627,7 +625,6 @@ void monitorCycleTime(){
         c_month = ptm->tm_mon+1;
         c_year = ptm->tm_year+1900;
         currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
-        
         
         if (cycleTime <= maxCycleTime){
           //sendData = true;
@@ -640,7 +637,6 @@ void monitorCycleTime(){
           numct = cycleTime;
         }
         sendws = true;
-        
       }
       else {                      // Inject = OFF
         staInj = 0;
@@ -650,8 +646,6 @@ void monitorCycleTime(){
     }
     laststateInject=stateInject;
   }
-
-
 }
 
 void senddata(){
@@ -710,6 +704,7 @@ void loop() {
 
   if (!WiFi.isConnected()) {
     Serial.println("WiFi disconnected, reconnecting...");
+    digitalWrite(LED_BUILTIN, HIGH);
     // connect to saved WiFi credentials
     WiFi.begin();
     // wait for connection
@@ -717,8 +712,9 @@ void loop() {
       delay(1000);
       Serial.println("Connecting to WiFi...");
     }
-    Serial.println("Connected to WiFi");
+    digitalWrite(LED_BUILTIN, LOW);
     ipAddress = WiFi.localIP().toString();
+    Serial.println("Connected to WiFi");
   }
 
   monitorCycleTime();
