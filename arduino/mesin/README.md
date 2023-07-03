@@ -1,5 +1,4 @@
-## Main program
-[mesin.ino](https://github.com/asaddun/adyawinsa/blob/main/arduino/mesin/mesin.ino)
+## Release Note:
 
 ## 4.0.2 Fix
 Reconnect saved WIFI if after several time sensor become AP and not configured.
