@@ -1,4 +1,9 @@
-## Release Note:
+## In Development:
+
+## 4.0.3
+Add the ability to store the temporary data to the memory using FS file when the connection of sensor is problem.
+
+## Release Change Log:
 
 ## 4.0.2 Fix
 Reconnect saved WIFI if after several time sensor become AP and not configured.
