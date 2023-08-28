@@ -1,115 +1,23 @@
 [
     {
-        "id": "ef150608c0e07e9d",
-        "type": "debug",
-        "z": "84635b615d072933",
-        "name": "debug 1",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 980,
-        "y": 60,
-        "wires": []
-    },
-    {
         "id": "aa0690eb18cdb2b8",
         "type": "function",
         "z": "84635b615d072933",
         "name": "parseJSON",
-        "func": "var data = msg.payload;\nvar act = { payload: data.action };\nvar id = { payload: data.id };\nvar inj = { payload: data.inj };\nvar cyc = { payload: data.cyc };\nvar ip = { payload: data.ip };\nreturn [inj, act, id, cyc, ip];",
-        "outputs": 5,
+        "func": "const data = msg.payload;\nconst action = data.action;\nconst id = data.id;\nconst inj = { payload: data.inj };\nconst cycletime = data.cyc;\nconst dt = data.dt;\nconst date = data.date\nconst time = data.time;\n\nconst ip = data.ip;\n\nmsg.payload = {\n    action,\n    id,\n    cycletime,\n    dt,\n    ip,\n    time\n};\nreturn [inj, msg];",
+        "outputs": 2,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 130,
-        "y": 360,
+        "x": 110,
+        "y": 220,
         "wires": [
             [
                 "9e54df47d7b0a286"
             ],
             [
-                "3c4af314b6310330"
-            ],
-            [
-                "faa56da50f8356ee"
-            ],
-            [
-                "321b15b0afbff1f5"
-            ],
-            [
-                "f31fd30afd1b2244"
-            ]
-        ]
-    },
-    {
-        "id": "1593e7e8071975e1",
-        "type": "join",
-        "z": "84635b615d072933",
-        "name": "",
-        "mode": "custom",
-        "build": "object",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": ",",
-        "joinerType": "str",
-        "accumulate": false,
-        "timeout": "",
-        "count": "4",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "num",
-        "reduceFixup": "",
-        "x": 530,
-        "y": 400,
-        "wires": [
-            [
                 "9e54df47d7b0a286"
-            ]
-        ]
-    },
-    {
-        "id": "faa56da50f8356ee",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "id",
-        "func": "msg.topic = \"id\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 360,
-        "wires": [
-            [
-                "1593e7e8071975e1"
-            ]
-        ]
-    },
-    {
-        "id": "321b15b0afbff1f5",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "cycletime",
-        "func": "msg.topic = \"cycletime\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 320,
-        "y": 400,
-        "wires": [
-            [
-                "1593e7e8071975e1"
             ]
         ]
     },
@@ -130,8 +38,8 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 580,
-        "y": 340,
+        "x": 340,
+        "y": 220,
         "wires": [
             [
                 "6c2671d5939e6b53",
@@ -150,7 +58,8 @@
         "y": 60,
         "wires": [
             [
-                "e60a8547ca310bb1"
+                "e60a8547ca310bb1",
+                "0d5feaa60ee24b1e"
             ]
         ]
     },
@@ -158,7 +67,7 @@
         "id": "191fd85e1ef6c05b",
         "type": "http request",
         "z": "84635b615d072933",
-        "name": "",
+        "name": "API",
         "method": "POST",
         "ret": "txt",
         "paytoqs": "ignore",
@@ -170,11 +79,12 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1050,
+        "x": 830,
         "y": 220,
         "wires": [
             [
-                "ee325b3483d6fa34"
+                "ee325b3483d6fa34",
+                "response-handler-node"
             ]
         ]
     },
@@ -182,7 +92,7 @@
         "id": "ee325b3483d6fa34",
         "type": "debug",
         "z": "84635b615d072933",
-        "name": "debug 3",
+        "name": "Response API",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -191,7 +101,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1220,
+        "x": 1000,
         "y": 220,
         "wires": []
     },
@@ -203,30 +113,11 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 890,
+        "x": 710,
         "y": 220,
         "wires": [
             [
                 "191fd85e1ef6c05b"
-            ]
-        ]
-    },
-    {
-        "id": "3c4af314b6310330",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "action",
-        "func": "msg.topic = \"action\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 320,
-        "wires": [
-            [
-                "1593e7e8071975e1"
             ]
         ]
     },
@@ -247,12 +138,11 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 710,
-        "y": 60,
+        "x": 330,
+        "y": 280,
         "wires": [
             [
-                "ef150608c0e07e9d",
-                "6eff259d04a7d654"
+                "781e6784ede24293"
             ]
         ]
     },
@@ -260,21 +150,21 @@
         "id": "e60a8547ca310bb1",
         "type": "function",
         "z": "84635b615d072933",
-        "name": "parse (shoot and temp)",
-        "func": "var data = JSON.parse(msg.payload);\nvar obj = data.action;\nvar a;\nvar b;\nif (obj == \"temp\") {\n    a = { payload: data };\n} else if (obj == \"shoot\") {\n    b = { payload: data };\n}\nreturn [a, b];",
+        "name": "parse action",
+        "func": "var data = JSON.parse(msg.payload);\nvar obj = data.action;\nvar i;\nvar j;\nif (obj == \"shoot\") {\n    i = { payload: data };\n} else if (obj == \"temp\") {\n    j = { payload: data };\n}\nreturn [i, j];",
         "outputs": 2,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 170,
-        "y": 160,
+        "x": 110,
+        "y": 140,
         "wires": [
             [
-                "36ce21e06a326063"
+                "aa0690eb18cdb2b8"
             ],
             [
-                "aa0690eb18cdb2b8"
+                "36ce21e06a326063"
             ]
         ]
     },
@@ -291,28 +181,9 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 800,
-        "y": 340,
+        "x": 540,
+        "y": 260,
         "wires": []
-    },
-    {
-        "id": "f31fd30afd1b2244",
-        "type": "function",
-        "z": "84635b615d072933",
-        "name": "ip",
-        "func": "msg.topic = \"ip\";\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 310,
-        "y": 440,
-        "wires": [
-            [
-                "1593e7e8071975e1"
-            ]
-        ]
     },
     {
         "id": "36ce21e06a326063",
@@ -325,8 +196,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 470,
-        "y": 100,
+        "x": 120,
+        "y": 320,
         "wires": [
             [
                 "9ddd225f5017ccd6"
@@ -359,12 +230,11 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 710,
-        "y": 100,
+        "x": 330,
+        "y": 320,
         "wires": [
             [
-                "ef150608c0e07e9d",
-                "6eff259d04a7d654"
+                "781e6784ede24293"
             ]
         ]
     },
@@ -379,8 +249,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 800,
-        "y": 280,
+        "x": 540,
+        "y": 220,
         "wires": [
             [
                 "6eff259d04a7d654"
@@ -404,11 +274,11 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 710,
-        "y": 140,
+        "x": 330,
+        "y": 360,
         "wires": [
             [
-                "6eff259d04a7d654"
+                "781e6784ede24293"
             ]
         ]
     },
@@ -429,11 +299,543 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
+        "x": 330,
+        "y": 400,
+        "wires": [
+            [
+                "781e6784ede24293"
+            ]
+        ]
+    },
+    {
+        "id": "ac4a402cf365415b",
+        "type": "catch",
+        "z": "84635b615d072933",
+        "name": "catch single json",
+        "scope": [
+            "191fd85e1ef6c05b"
+        ],
+        "uncaught": false,
+        "x": 860,
+        "y": 100,
+        "wires": [
+            [
+                "1f3e9c6f9325703c"
+            ]
+        ]
+    },
+    {
+        "id": "de47da071d79b0d7",
+        "type": "file",
+        "z": "84635b615d072933",
+        "name": "Write single.txt",
+        "filename": "/NoderedLostdata/single.txt",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 1220,
+        "y": 100,
+        "wires": [
+            [
+                "3e906ec5ed4bcecf"
+            ]
+        ]
+    },
+    {
+        "id": "3e906ec5ed4bcecf",
+        "type": "debug",
+        "z": "84635b615d072933",
+        "name": "Write to file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1310,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "1f3e9c6f9325703c",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "parseJSON",
+        "func": "const data = JSON.parse(msg.payload);\nconst id = data.id;\nconst cycletime = data.cycletime;\nconst time = data.date + \" \" + data.time;\nconst ip = data.ip;\n\n\nmsg.payload = {\n    id,\n    cycletime,\n    ip,\n    time\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 100,
+        "wires": [
+            [
+                "de47da071d79b0d7"
+            ]
+        ]
+    },
+    {
+        "id": "1f888bccea1ae378",
+        "type": "file",
+        "z": "84635b615d072933",
+        "name": "Write batch.txt",
+        "filename": "/NoderedLostdata/batch.txt",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 1060,
+        "y": 140,
+        "wires": [
+            [
+                "3e906ec5ed4bcecf"
+            ]
+        ]
+    },
+    {
+        "id": "34f8c23c0d960d07",
+        "type": "catch",
+        "z": "84635b615d072933",
+        "name": "catch array json",
+        "scope": [
+            "ef612f1a41efda8c"
+        ],
+        "uncaught": false,
+        "x": 860,
+        "y": 140,
+        "wires": [
+            [
+                "1f888bccea1ae378"
+            ]
+        ]
+    },
+    {
+        "id": "0d5feaa60ee24b1e",
+        "type": "json",
+        "z": "84635b615d072933",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 350,
+        "y": 180,
+        "wires": [
+            [
+                "335732d5140b32ff"
+            ]
+        ]
+    },
+    {
+        "id": "335732d5140b32ff",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "Check array or not",
+        "func": "if (typeof msg.payload === \"object\") {\n    if (Array.isArray(msg.payload)) {\n        // it's an array\n        return msg;\n    } else {\n        // it's a single JSON object\n    }\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 510,
+        "y": 180,
+        "wires": [
+            [
+                "ace72dd7eda79dd6"
+            ]
+        ]
+    },
+    {
+        "id": "ef612f1a41efda8c",
+        "type": "http request",
+        "z": "84635b615d072933",
+        "name": "API",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://apik.adyawinsa.com/smsd/api/arduino.php",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 830,
+        "y": 180,
+        "wires": [
+            [
+                "ee325b3483d6fa34",
+                "response-handler-node"
+            ]
+        ]
+    },
+    {
+        "id": "ace72dd7eda79dd6",
+        "type": "json",
+        "z": "84635b615d072933",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
         "x": 710,
         "y": 180,
         "wires": [
             [
-                "6eff259d04a7d654"
+                "ef612f1a41efda8c"
+            ]
+        ]
+    },
+    {
+        "id": "response-handler-node",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "Response Status",
+        "func": "if (msg.statusCode >= 200 && msg.statusCode < 300) {\n    node.status({ fill: \"green\", shape: \"dot\", text: \"Success\" });\n    return msg;\n} else {\n    node.status({ fill: \"red\", shape: \"dot\", text: \"Failed\" });\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1010,
+        "y": 180,
+        "wires": [
+            [
+                "b1c8cd1555dd95c9",
+                "1e2d0c1220fe54b4"
+            ]
+        ]
+    },
+    {
+        "id": "1e2d0c1220fe54b4",
+        "type": "file in",
+        "z": "84635b615d072933",
+        "name": "Read batch.txt",
+        "filename": "/NoderedLostdata/batch.txt",
+        "filenameType": "str",
+        "format": "lines",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 1200,
+        "y": 180,
+        "wires": [
+            [
+                "0176f1200262420a"
+            ]
+        ]
+    },
+    {
+        "id": "b1c8cd1555dd95c9",
+        "type": "file in",
+        "z": "84635b615d072933",
+        "name": "Read single.txt",
+        "filename": "/NoderedLostdata/single.txt",
+        "filenameType": "str",
+        "format": "lines",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 1200,
+        "y": 220,
+        "wires": [
+            [
+                "220ec51debe90fb5"
+            ]
+        ]
+    },
+    {
+        "id": "0176f1200262420a",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "Check batch.txt",
+        "func": "var i = msg.payload;\nif (i === \"\"){\n} else{\n    return msg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1380,
+        "y": 180,
+        "wires": [
+            [
+                "710b5bf38f91011f",
+                "b1a86f1eabdd2beb"
+            ]
+        ]
+    },
+    {
+        "id": "220ec51debe90fb5",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "Check single.txt",
+        "func": "var i = msg.payload;\nif (i === \"\"){\n} else{\n    return msg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1380,
+        "y": 220,
+        "wires": [
+            [
+                "57d5eb7df3c6ac0c"
+            ]
+        ]
+    },
+    {
+        "id": "1e81dceac38e9d1d",
+        "type": "trigger",
+        "z": "84635b615d072933",
+        "name": "Wait 500 ms",
+        "op1": "",
+        "op2": "",
+        "op1type": "nul",
+        "op2type": "date",
+        "duration": "500",
+        "extend": false,
+        "overrideDelay": false,
+        "units": "ms",
+        "reset": "",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 1190,
+        "y": 260,
+        "wires": [
+            [
+                "a61a41f0e72e6c61",
+                "710b5bf38f91011f"
+            ]
+        ]
+    },
+    {
+        "id": "710b5bf38f91011f",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "Clear file",
+        "func": "msg.payload = \"\";\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1360,
+        "y": 300,
+        "wires": [
+            [
+                "918e4f5cb1083d33",
+                "2eccc89aad2458ac"
+            ]
+        ]
+    },
+    {
+        "id": "a61a41f0e72e6c61",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "Send flow.temp",
+        "func": "var tempData = flow.get('temp');\nmsg.payload = tempData;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1380,
+        "y": 260,
+        "wires": [
+            [
+                "f796922c4b2ad25c",
+                "26fa0e443efc36d3"
+            ]
+        ]
+    },
+    {
+        "id": "57d5eb7df3c6ac0c",
+        "type": "json",
+        "z": "84635b615d072933",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 1530,
+        "y": 220,
+        "wires": [
+            [
+                "42a855d02fe64a06"
+            ]
+        ]
+    },
+    {
+        "id": "26fa0e443efc36d3",
+        "type": "json",
+        "z": "84635b615d072933",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 1530,
+        "y": 260,
+        "wires": [
+            [
+                "b1a86f1eabdd2beb"
+            ]
+        ]
+    },
+    {
+        "id": "42a855d02fe64a06",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "Collecting from log.txt",
+        "func": "var newData = msg.payload;\nvar tempData = flow.get('temp') || [];\ntempData.push(newData);\nflow.set('temp', tempData);\n// var tempData = \"[\";\n// tempData += newData;\n// tempData += \"]\";\n// msg.payload = tempData;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1700,
+        "y": 220,
+        "wires": [
+            [
+                "1e81dceac38e9d1d"
+            ]
+        ]
+    },
+    {
+        "id": "f796922c4b2ad25c",
+        "type": "function",
+        "z": "84635b615d072933",
+        "name": "Clear flow.temp",
+        "func": "flow.set('temp', undefined);\nmsg.payload = \"flow.temp has been cleared\";\nreturn msg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1560,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "918e4f5cb1083d33",
+        "type": "file",
+        "z": "84635b615d072933",
+        "name": "Clear single.txt",
+        "filename": "/NoderedLostdata/single.txt",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1560,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2eccc89aad2458ac",
+        "type": "file",
+        "z": "84635b615d072933",
+        "name": "Clear batch.txt",
+        "filename": "/NoderedLostdata/batch.txt",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 1560,
+        "y": 380,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b1a86f1eabdd2beb",
+        "type": "http request",
+        "z": "84635b615d072933",
+        "name": "API",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://apik.adyawinsa.com/smsd/api/arduino.php",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1650,
+        "y": 180,
+        "wires": [
+            [
+                "0f63234b187b4722"
+            ]
+        ]
+    },
+    {
+        "id": "0f63234b187b4722",
+        "type": "debug",
+        "z": "84635b615d072933",
+        "name": "Response API",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1800,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "c63b63e5db26deb2",
+        "type": "http request",
+        "z": "84635b615d072933",
+        "name": "API",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://apik.adyawinsa.com/smsd/api/arduino.php",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 830,
+        "y": 260,
+        "wires": [
+            [
+                "ee325b3483d6fa34"
+            ]
+        ]
+    },
+    {
+        "id": "781e6784ede24293",
+        "type": "json",
+        "z": "84635b615d072933",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 710,
+        "y": 260,
+        "wires": [
+            [
+                "c63b63e5db26deb2"
             ]
         ]
     },
