@@ -17,6 +17,7 @@
  *    - setting to ACCESS POINT at first time running
  *    
  * @Author: Abraham Sulaeman- 19 Mei 2022
+ * Update: Muhammad Asad- 28 Agustus 2023
  */
  
 void(* resetFunc) (void) = 0; //declare reset function @ address 0 
@@ -48,7 +49,7 @@ NTPClient timeClient(ntpUDP, "id.pool.ntp.org");
 int laststateInject = 0,laststateClamp = 0;     // previous state of the button
 boolean semiAuto=false; // True: Single Sensor for Clam and Injection
 
-String versionNum="4.0.2"; // System Version
+String versionNum="4.0.3"; // System Version
 
 unsigned long timenow;
 unsigned long lastTime;
@@ -77,6 +78,7 @@ char deviceId[10], deviceName[50], WSaddress[16], chPort[5];
 String ipAddress, action = "shoot";
 bool wiFiConnected = true, websocketConnected = false;
 unsigned long wifiMillis, wifiDownSecond, wifiDownMinute;
+time_t epochTime;
 
 /*
 int timerSensor=0;  // sensor update per 2 detik
@@ -111,12 +113,17 @@ char html_template[] PROGMEM = R"=====(
             var day_data = data.day;
             var hour_data = data.hour;
             var minute_data = data.minute;
-            var date_data = data.date;
             var time_data = data.time;
 
             if (inj_data == 1){ // take the timestamp when inject
-              document.getElementById("date_value").innerHTML = date_data;
-              document.getElementById("time_value").innerHTML = time_data;;
+              var epochTime = time_data;
+              var date = new Date(epochTime * 1000); // Convert to milliseconds
+              var options = { day: 'numeric', month: 'numeric', year: 'numeric' };
+              var formattedDate = date.toLocaleDateString("en-GB", options);
+              var formattedTime = date.toLocaleTimeString("en-GB");
+
+              document.getElementById("date_value").innerHTML = formattedDate;
+              document.getElementById("time_value").innerHTML = formattedTime;
             }
 
             if(cla_data == 0){
@@ -610,13 +617,13 @@ void monitorCycleTime(){
         run_hour %= 24;
         
         // NTP get data
-        time_t epochTime = timeClient.getEpochTime();
-        formattedTime = timeClient.getFormattedTime();
-        struct tm *ptm = gmtime ((time_t *)&epochTime);
-        c_day = ptm->tm_mday;
-        c_month = ptm->tm_mon+1;
-        c_year = ptm->tm_year+1900;
-        currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
+        epochTime = timeClient.getEpochTime();
+        // formattedTime = timeClient.getFormattedTime();
+        // struct tm *ptm = gmtime ((time_t *)&epochTime);
+        // c_day = ptm->tm_mday;
+        // c_month = ptm->tm_mon+1;
+        // c_year = ptm->tm_year+1900;
+        // currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
         
         if (wiFiConnected == false || websocketConnected == false){
           writefile();
@@ -661,7 +668,7 @@ void readfile(){
   while (file.available()) {
     String contents = file.readStringUntil('\n');
     contents.trim();
-    String time;
+    String time, date;
     int commaPos = contents.indexOf(',');
     if (commaPos != -1) {
       numct = contents.substring(0, commaPos).toInt();
@@ -679,31 +686,14 @@ void readfile(){
   String jsonString;
   serializeJson(jsonArray, jsonString);
 
-  // Print the JSON string to the Serial Monitor
   Serial.println(jsonString);
   webSocket.sendTXT(jsonString);
-
-    // action = "downtime";
-    // String jsonData = "{";
-    // jsonData += "\"action\":\"";
-    // jsonData += action;
-    // jsonData += "\",\"cyc\":";
-    // jsonData += numct;
-    // jsonData += ",\"time\":\"";
-    // jsonData += time;
-    // jsonData += "\"";
-    // jsonData += "}";
-    // delay(500);
-    // webSocket.sendTXT(jsonData);
-    // Serial.println(jsonData);
   
-  // Close the file
   file.close();
   SPIFFS.remove("/down.txt");
 }
 
 void writefile(){
-  // Write to file if `status` is false
   File file = SPIFFS.open("/down.txt", "a");
   if (!file) {
     Serial.println("Failed to open file for writing");
@@ -713,7 +703,7 @@ void writefile(){
   String data;
   data += cycleTime;
   data += ", ";
-  data += formattedTime;
+  data += epochTime; // considering using epoch time instead of formatted time
   file.println(data);
 
   // Close file
@@ -748,12 +738,8 @@ void senddata(){
   JSON_Data += run_hour;
   JSON_Data += ",\"minute\":";
   JSON_Data += run_minute;
-  JSON_Data += ",\"date\":\"";
-  JSON_Data += currentDate;
-  JSON_Data += "\"";
-  JSON_Data += ",\"time\":\"";
-  JSON_Data += formattedTime;
-  JSON_Data += "\"";
+  JSON_Data += ",\"time\":";
+  JSON_Data += epochTime;
   JSON_Data += ",\"ver\":\"";
   JSON_Data += versionNum;
   JSON_Data += "\"";
@@ -807,5 +793,4 @@ void loop() {
   if (sendws == true){
     senddata();
   }
-
 }
