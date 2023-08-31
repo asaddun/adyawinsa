@@ -1,1 +1,1 @@
-Main file is flow.json
+Main file is flows.json
