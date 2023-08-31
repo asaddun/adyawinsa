@@ -43,7 +43,7 @@ ESP8266WebServer server(80);
 WebSocketsServer webSocket_server = WebSocketsServer(81);
 WebSocketsClient webSocket;
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "id.pool.ntp.org");
+NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
 
 int laststateInject = 0,laststateClamp = 0;     // previous state of the button
@@ -78,7 +78,7 @@ char deviceId[10], deviceName[50], WSaddress[16], chPort[5];
 String ipAddress, action = "shoot";
 bool wiFiConnected = true, websocketConnected = false;
 unsigned long wifiMillis, wifiDownSecond, wifiDownMinute;
-time_t epochTime;
+unsigned long epochTime;
 
 /*
 int timerSensor=0;  // sensor update per 2 detik
@@ -558,7 +558,7 @@ void setup() {
 
   // NTP Setup
   timeClient.begin();
-  timeClient.setTimeOffset(25200); // GMT +7 (60(sec) * 60(min) * 7(hour))
+  // timeClient.setTimeOffset(25200); // GMT +7 (60(sec) * 60(min) * 7(hour))
   
   //setup PIN
   pinMode(pinClamp, INPUT);
@@ -775,10 +775,6 @@ void loop() {
     if (wiFiConnected == false){
       wifiDownSecond = (millis() - wifiMillis) / 1000;  // Wifi Downtime in second
       wifiDownMinute = wifiDownSecond / 60;             // Wifi Downtime in minute
-      // numdt = wifiDownSecond;
-      // wifiMillis = 0;
-      // action = "wifi";
-      // sendws = true;
       Serial.println(wifiDownSecond);
       Serial.println(wifiDownMinute);
       digitalWrite(LED_BUILTIN, LOW);
@@ -793,4 +789,5 @@ void loop() {
   if (sendws == true){
     senddata();
   }
+
 }
