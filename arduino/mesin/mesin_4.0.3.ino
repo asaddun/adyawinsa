@@ -311,7 +311,7 @@ char html_reset[] PROGMEM = R"=====(
   </html>
 )=====";
 
-void webSocketEvent_server(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+void webSocketEvent_server(uint8_t num, WStype_t type, uint8_t * payload, size_t length) { // Sensor as a Websocket server
 
     switch(type) {
         case WStype_DISCONNECTED:
@@ -346,7 +346,7 @@ void webSocketEvent_server(uint8_t num, WStype_t type, uint8_t * payload, size_t
     }
 }
 
-void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) { // Sensor as a Websocket Client
     switch(type) {
         case WStype_DISCONNECTED:
             Serial.printf("[WSc] Disconnected!\n");
@@ -404,7 +404,7 @@ void saveConfigCallback() {
   shouldSaveConfig = true;
 }
 
-void connectWifi(){
+void connectWifi(){  // Try reconnect wifi if in setup fails to connect wifi
   wifiManager.setConfigPortalTimeout(60);
   if(!wifiManager.autoConnect()) {
     Serial.println("failed to connect and hit timeout");
@@ -466,7 +466,7 @@ void setup() {
   wifiManager.addParameter(&customDeviceName);
   wifiManager.addParameter(&customWSaddress);
   
-  connectWifi();
+  connectWifi();  // Try reconnect wifi if in setup fails to connect wifi
 
   // wifiManager.resetSettings();
   // AP esp if can't connect to wifi  
@@ -607,7 +607,7 @@ void monitorCycleTime(){
         cycleTime = (timenow-lastInject)/1000;
         lastInject = timenow;
  
-        runtime += cycleTime;
+        runtime += cycleTime;    // Get runtime from cycletime
         run_second = runtime;
         run_minute = run_second / 60;
         run_hour = run_minute / 60;
@@ -626,19 +626,19 @@ void monitorCycleTime(){
         // currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
         
         if (wiFiConnected == false || websocketConnected == false){
-          writefile();
+          writefile();    // Write to file if connection in problem
           numct = cycleTime;
         } else if (wiFiConnected == true && websocketConnected == true) {
           File file = SPIFFS.open("/down.txt", "r");
           if (file && websocketConnected == true) {
-            readfile();
+            readfile();   // Read and send the saved data when connection  reestablished
           } else {
             if (cycleTime <= maxCycleTime){
               numct = cycleTime;
             } else if (cycleTime > maxCycleTime) {
               numct = 0;
               unsigned long secondDowntime = cycleTime;           // Downtime in second
-              unsigned long minuteDowntime = cycleTime / 60; // Downtime in minute
+              unsigned long minuteDowntime = cycleTime / 60;      // Downtime in minute
               // action = "down";
               numdt = secondDowntime;
               Serial.println(secondDowntime);
@@ -760,7 +760,7 @@ void loop() {
     if (wiFiConnected == true){
       Serial.println("WiFi disconnected, reconnecting...");
       wifiMillis = millis();
-      WiFi.begin();
+      WiFi.begin();   // Try to reconnect wifi when in the middle wifi got disconnected
       digitalWrite(LED_BUILTIN, HIGH);
       wiFiConnected = false;
       websocketConnected = false;
@@ -779,7 +779,7 @@ void loop() {
       Serial.println(wifiDownMinute);
       digitalWrite(LED_BUILTIN, LOW);
       delay(100);
-      ipAddress = WiFi.localIP().toString();
+      ipAddress = WiFi.localIP().toString();      // Get new IP address after reconnected
       Serial.println("Connected to WiFi");
       wiFiConnected = true;
     }
