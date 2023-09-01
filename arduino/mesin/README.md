@@ -1,6 +1,12 @@
 ## Wiring
 
-![wiring](https://i.imgur.com/cKlN3Vx.jpg)
+![wiring](https://i.imgur.com/cKlN3Vx.jpg)  
+
+D6 as a Clamp Signal  
+D7 as an Inject Signal  
+5V from Arduino connect to COM Relay  
+NO Relay connect to D6/D7  
+D6 and D7 with Resistor 1k connect to GND of Arduino
 
 ## Release Change Log:
 
