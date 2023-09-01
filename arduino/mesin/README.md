@@ -9,7 +9,7 @@ NO Relay connect to D6/D7
 D6 and D7 with Resistor 1k connect to GND of Arduino
 
 ## Flow
-![wiring](https://i.imgur.com/h5RQgyR.png)  
+<img src="https://i.imgur.com/h5RQgyR.png" alt="Screenshot of My App" width="450" height="600">  
 
 ## Release Change Log:
 
