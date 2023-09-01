@@ -24,14 +24,11 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "id.pool.ntp.org");
 
 int run_second, run_minute, run_hour, run_day;
-String JSON_Data;
+String JSON_Data, currentDate, formattedTime, ipAddress;
 boolean sendws = false, wifiConnected = true;
 bool shouldSaveConfig = false;
-char deviceId[10], deviceName[50], WSaddress[16], chPort[5], loc[50];
-// char blumin[2], blumax[2], gremin[2], gremax[2], redmin[2], redmax[2];
-String strPort;
-int WSport;
-String ipAddress;
+char deviceId[10], deviceName[50], WSaddress[16], loc[50];
+float data;
 
 char html_template[] PROGMEM = R"=====(
 <!DOCTYPE html>
@@ -261,6 +258,15 @@ void saveConfigCallback() {
   shouldSaveConfig = true;
 }
 
+void connectWifi(){
+  wifiManager.setConfigPortalTimeout(60);
+  if(!wifiManager.autoConnect()) {
+    Serial.println("failed to connect and hit timeout");
+    delay(1000);
+    connectWifi();
+  }
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -279,22 +285,23 @@ void setup() {
         std::unique_ptr<char[]> buf(new char[size]);
 
         configFile.readBytes(buf.get(), size);
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& json = jsonBuffer.parseObject(buf.get());
-        json.printTo(Serial);
-        if (json.success()) {
+        // DynamicJsonBuffer jsonBuffer;
+        // JsonObject& json = jsonBuffer.parseObject(buf.get());
+        // json.printTo(Serial);
+        // if (json.success()) {
+        DynamicJsonDocument json(512);
+        auto deserializeError = deserializeJson(json, buf.get());
+        serializeJson(json, Serial);
+        if ( ! deserializeError ) {
           Serial.println("\nparsed json");
           strcpy(deviceId, json["deviceId"]);
           strcpy(deviceName, json["deviceName"]);
           strcpy(WSaddress, json["WSaddress"]);
-          strcpy(chPort, json["Port"]);
           strcpy(loc, json["Loc"]);
         } else {
           Serial.println("failed to load json config");
         }
       }
-      // configFile.close();
-      // SPIFFS.remove("/config.json");
     }
   } else {
     Serial.println("failed to mount FS");
@@ -307,39 +314,34 @@ void setup() {
   WiFiManagerParameter customDeviceName("deviceName", "Device Name", deviceName, 50);
   WiFiManagerParameter customLoc("loc", "Location", loc, 50);
   WiFiManagerParameter customWSaddress("WSaddress", "Websocket Address", WSaddress, 16);
-  WiFiManagerParameter customPort("Port", "Port (ws//:xxx.xxx.xxx.xxx:'xxxx'/)", chPort, 5);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.addParameter(&customDeviceId);
   wifiManager.addParameter(&customDeviceName);
   wifiManager.addParameter(&customLoc);
   wifiManager.addParameter(&customWSaddress);
-  wifiManager.addParameter(&customPort);
   // wifiManager.resetSettings();
   // AP esp if can't connect to wifi (each board mac)  
-  wifiManager.autoConnect();
+  // wifiManager.autoConnect();
+  connectWifi();
   strcpy(deviceId, customDeviceId.getValue());
   strcpy(deviceName, customDeviceName.getValue());
   strcpy(loc, customLoc.getValue());
   strcpy(WSaddress, customWSaddress.getValue());
-  strcpy(chPort, customPort.getValue());
 
   if (shouldSaveConfig) {
     Serial.println("saving config");
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
+    DynamicJsonDocument json(512);
     json["deviceId"] = deviceId;
     json["deviceName"] = deviceName;
     json["WSaddress"] = WSaddress;
-    json["Port"] = chPort;
     json["Loc"] = loc;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
       Serial.println("failed to open config file for writing");
     }
-
-    json.printTo(Serial);
-    json.printTo(configFile);
+    serializeJson(json, Serial);
+    serializeJson(json, configFile);
     configFile.close();
     //end save
   }
@@ -365,12 +367,8 @@ void setup() {
   Serial.print("[WSc] Try connect to WS server ");
   Serial.print(WSaddress);
   Serial.print(":");
-  for(int i=0; i<=4; i++){
-    strPort += chPort[i];
-  }
-  WSport = strPort.toInt();
-  Serial.println(WSport);
-  webSocket.begin(WSaddress, WSport, "/"); // Websocket server address
+  Serial.println("1880");
+  webSocket.begin(WSaddress, 1880, "/"); // Websocket server address
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 
@@ -408,39 +406,7 @@ void setup() {
   Serial.println(ipAddress);
 }
 
-void loop() {
-  server.handleClient();
-  webSocket_server.loop();
-  webSocket.setReconnectInterval(5000); // If disconnected from websocket will try reconnect every 5 seconds
-  webSocket.loop();
-  ArduinoOTA.handle();
-  timeClient.update();
-  sensors.requestTemperatures();
-  float data = sensors.getTempCByIndex(0);
-
-  if (!WiFi.isConnected()) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    Serial.println("WiFi disconnected, reconnecting...");
-    // connect to saved WiFi credentials
-    WiFi.begin();
-    // wait for connection
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(1000);
-      Serial.println("Connecting to WiFi...");
-    }
-    Serial.println("Connected to WiFi");
-  }
-
-  // NTP get data
-  time_t epochTime = timeClient.getEpochTime();
-  String formattedTime = timeClient.getFormattedTime();
-  struct tm *ptm = gmtime ((time_t *)&epochTime);
-  int c_day = ptm->tm_mday;
-  int c_month = ptm->tm_mon+1;
-  int c_year = ptm->tm_year+1900;
-  String currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
-
-  String JSON_Data;
+void senddata(){
   JSON_Data = "{";
   JSON_Data += "\"action\":";
   JSON_Data += "\"temp\"";
@@ -467,4 +433,42 @@ void loop() {
   Serial.println(JSON_Data);
   webSocket.sendTXT(JSON_Data);
   webSocket_server.broadcastTXT(JSON_Data);
+}
+
+void loop() {
+  server.handleClient();
+  webSocket_server.loop();
+  webSocket.setReconnectInterval(5000); // If disconnected from websocket will try reconnect every 5 seconds
+  webSocket.loop();
+  ArduinoOTA.handle();
+  timeClient.update();
+  
+  sensors.requestTemperatures();
+  data = sensors.getTempCByIndex(0);
+
+  if (!WiFi.isConnected()) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    Serial.println("WiFi disconnected, reconnecting...");
+    // connect to saved WiFi credentials
+    WiFi.begin();
+    // wait for connection
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+      Serial.println("Connecting to WiFi...");
+    }
+    digitalWrite(LED_BUILTIN, LOW);
+    ipAddress = WiFi.localIP().toString();
+    Serial.println("Connected to WiFi");
+  }
+
+  // NTP get data
+  time_t epochTime = timeClient.getEpochTime();
+  formattedTime = timeClient.getFormattedTime();
+  struct tm *ptm = gmtime ((time_t *)&epochTime);
+  int c_day = ptm->tm_mday;
+  int c_month = ptm->tm_mon+1;
+  int c_year = ptm->tm_year+1900;
+  currentDate = String(c_day) + "/" + String(c_month) + "/" + String(c_year);
+
+  senddata();
 }
