@@ -8,6 +8,9 @@ D7 as an Inject Signal
 NO Relay connect to D6/D7  
 D6 and D7 with Resistor 1k connect to GND of Arduino
 
+## Flow
+![wiring](https://i.imgur.com/h5RQgyR.png)  
+
 ## Release Change Log:
 
 ## 4.0.3 Update
