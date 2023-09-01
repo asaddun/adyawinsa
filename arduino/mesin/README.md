@@ -11,7 +11,7 @@ D6 and D7 with Resistor 1k connect to GND of Arduino
 ## Flow
 <img src="https://i.imgur.com/h5RQgyR.png" alt="Screenshot of My App" width="450" height="600">  
 
-## Release Change Log:
+## Release Change Log
 
 ## 4.0.3 Update
 - Add the ability to store the temporary data to the memory using FS file when the connection of sensor is problem, then send data again when connection is reestablised as a JSON Array format.  
