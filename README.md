@@ -1,28 +1,31 @@
-## Sensor for Monitoring
-Code sensor for monitoring injection machine and cooling tower temperature.
+## Release Change Log:
 
-## Requirement
-- Node-RED
+## 4.0.3
+- Add the ability to store the temporary data to the memory using FS file when the connection of sensor is problem.  
+- Change the way send the time, now using the epoch time (second from 01-01-1970), in this code the epoch is in GMT 00:00, using JS funtion `toLocaleTimeString()` or `toLocaleDateString()` will convert the epoch to the time zone area of the system.
 
-## Instalation
-To install Node-RED, open command prompt type:
-```
-npm install -g --unsafe-perm node-red
-```
+## 4.0.2 Fix
+Reconnect saved WIFI if after several time sensor become AP and not configured.
 
-## Run
-To run Node-RED simply open command prompt type:
-```
-node-red
-```
-then open browser and search for:
-```
-127.0.0.1:1880 
-```
-or
-```
-localhost:1880
-```
-to open Node-RED editor.
+## 4.0.1 Fix
+Bug fix miss IP when sensor reconnecting WIFI.
 
-Import the flows.json in [node-red](https://github.com/asaddun/adyawinsa/tree/main/node-red) directory into your Node-RED
+## 4.0.0 Release
+#### Always reconnect WIFI
+    Ability to reconnect to Wifi if disconnected, without entering Wifi Manager Portal.
+    (in some long time, if still disconnected, it will open the Wifi Manager Portal)
+
+#### 'Reset' button at dashboard
+    Ability to reset WIFI Credential to make changes in Wifi Manager Portal.
+
+#### Over the Air
+    Ability to upload code without connect the data cable, Limited by IP Segment.
+
+#### Network Protocol Time
+    Request Network Time to be send as data.
+
+#### WiFi Manager
+    Adding Wifi Manager to easy connect to WIFI and set parameter of machine ID in Wifi Manager Portal.
+
+#### Websocket Client & Server
+    Adding Websocket to communicate the data to server and dashboard.
