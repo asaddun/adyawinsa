@@ -1,165 +1,185 @@
 <!DOCTYPE html>
 <html>
-   <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Dashboard</title>
-      <script>
-        var socket = new WebSocket("ws://192.168.10.190:7000");
-        socket.onmessage  = 
-        function(event) {  
-          var full_data = event.data;
-          console.log(full_data);
-          var data = JSON.parse(full_data);
-          var id_data = data.id;
-          var cla_data = data.cla;
-          var inj_data = data.inj;
-          var cyc_data = data.cyc;
-          var shut_data = data.shut;
-          var day_data = data.day;
-          var mon_data = data.mon;
-          var year_data = data.year;
-          var hour_data = data.hour;
-          var min_data = data.min;
-          var sec_data = data.sec;
+ <head>
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1">
+     <title>Dashboard</title>
+     <script>
+       var socket = new WebSocket("ws://" + window.location.hostname + ":81");
+       socket.onmessage  = 
+       function(event) {  
+         var full_data = event.data;
+         console.log(full_data);
+         var data = JSON.parse(full_data);
+         var id_data = data.id;
+         var name_data = data.name;
+         var cla_data = data.cla;
+         var inj_data = data.inj;
+         var cyc_data = data.cyc;
+         var shoot_data = data.shoot;
+         var day_data = data.day;
+         var hour_data = data.hour;
+         var minute_data = data.minute;
+         var time_data = data.time;
 
-          if (inj_data == 1){ // take the timestamp when inject
-            document.getElementById("day_value").innerHTML = day_data;
-            document.getElementById("mon_value").innerHTML = mon_data;
-            document.getElementById("year_value").innerHTML = year_data;
-            document.getElementById("hour_value").innerHTML = hour_data;
-            document.getElementById("min_value").innerHTML = min_data;
-            document.getElementById("sec_value").innerHTML = sec_data;
-          }
+         if (inj_data == 1){ // take the timestamp when inject
+           var epochTime = time_data;
+           var date = new Date(epochTime * 1000); // Convert to milliseconds
+           var options = { day: 'numeric', month: 'numeric', year: 'numeric' };
+           var formattedDate = date.toLocaleDateString("en-GB", options);
+           var formattedTime = date.toLocaleTimeString("en-GB");
 
-          if(cla_data == 0){
-            cla_data = "OFF";
-            cla_data = cla_data.fontcolor("red");
-          }else{
-            cla_data = "ON";
-            cla_data = cla_data.fontcolor("green");
-          }
-          if(inj_data == 0){
-            inj_data = "OFF";
-            inj_data = inj_data.fontcolor("red");
-          }else{
-            inj_data = "ON";
-            inj_data = inj_data.fontcolor("green");
-          }
+           document.getElementById("date_value").innerHTML = formattedDate;
+           document.getElementById("time_value").innerHTML = formattedTime;
+         }
 
-          document.getElementById("id_value").innerHTML = id_data;
-          document.getElementById("cla_value").innerHTML = cla_data;
-          document.getElementById("inj_value").innerHTML = inj_data;
-          document.getElementById("cyc_value").innerHTML = cyc_data;
-          document.getElementById("shut_value").innerHTML = shut_data;
-        };
-      </script>
-      <style>
-        .box {
-          width: 350px;
-          height: 250px;
-          position: relative;
-          border-radius: 10px;
-          margin: 10px;
-          text-align: center;
-          font-size: 18px;
-        }
-        .cycle {
-          width: 175px;
-          height: 187.5px;
-          background: green;
-          position: absolute;
-          border-radius: 10px 0px 0px 0px;
-        }
-        .cyctext {
-          font-weight: bold;
-          font-size: 56px;
-          text-align: center;
-          margin-top: 25%;
-        }
-        .clamp {
-          width: 87.5px;
-          height: 62.5px;
-          background: blue;
-          position: absolute;
-          margin-top: 187px;
-          border-radius: 0px 0px 0px 10px;
-        }
-        .inject {
-          width: 87.5px;
-          height: 62.5px;
-          background: violet;
-          position: absolute;
-          margin-top: 187px;
-          margin-left: 25%;
-        }
-        .onoff {
-          font-weight: bold;
-          font-size: 20px;
-          text-align: center;
-          margin-top: 5px;
-        }
-        .shut {
-          width: 175px;
-          height: 115px;
-          background: yellow;
-          position: absolute;
-          margin-left: 50%;
-          border-radius: 0px 10px 0px 0px;
-        }
-        .shutext {
-          font-weight: bold;
-          font-size: 56px;
-          text-align: center;
-          margin-top: 10px;
-        }
-        .time {
-          width: 175px;
-          height: 72.5px;
-          background: orange;
-          position: absolute;
-          margin-left: 50%;
-          margin-top: 115px;
-        }
-        .idbox {
-          width: 175px;
-          height: 62.5px;
-          background: blueviolet;
-          position: absolute;
-          margin-left: 50%;
-          margin-top: 187px;
-          border-radius: 0px 0px 10px 0px;
-        }
-      </style>
-   </head>
-   <body>
-      <div class="box">
+         if(cla_data == 0){
+           cla_data = "OFF";
+           cla_data = cla_data.fontcolor("red");
+         }else{
+           cla_data = "ON";
+           cla_data = cla_data.fontcolor("green");
+         }
+         if(inj_data == 0){
+           inj_data = "OFF";
+           inj_data = inj_data.fontcolor("red");
+         }else{
+           inj_data = "ON";
+           inj_data = inj_data.fontcolor("green");
+         }
 
-        <div class="cycle">
-          Last Cycle Duration:<div class="cyctext" id="cyc_value"></div>
-        </div>
+         document.getElementById("id_value").innerHTML = id_data;
+         document.title = name_data;
+         document.getElementById("cla_value").innerHTML = cla_data;
+         document.getElementById("inj_value").innerHTML = inj_data;
+         document.getElementById("cyc_value").innerHTML = cyc_data;
+         document.getElementById("shoot_value").innerHTML = shoot_data;
+         document.getElementById("day_value").innerHTML = day_data;
+         document.getElementById("hour_value").innerHTML = hour_data;
+         document.getElementById("minute_value").innerHTML = minute_data;
+       };
+     </script>
+     <style>
+       .box {
+         width: 375px;
+         height: 250px;
+         position: relative;
+         border-radius: 10px;
+         margin: 10px;
+         text-align: center;
+         font-size: 18px;
+       }
+       .cycle {
+         width: 200px;
+         height: 130px;
+         background: green;
+         position: absolute;
+         border-radius: 10px 0px 0px 0px;
+       }
+       .cyctext {
+         font-weight: bold;
+         font-size: 56px;
+         text-align: center;
+         margin-top: 16px;
+       }
+       .runtime {
+         width: 200px;
+         height: 72.5px;
+         background: aquamarine;
+         position: absolute;
+         margin-top: 130px;
+       }
+       .clamp {
+         width: 100px;
+         height: 62.5px;
+         background: blue;
+         position: absolute;
+         margin-top: 187px;
+         border-radius: 0px 0px 0px 10px;
+       }
+       .inject {
+         width: 100px;
+         height: 62.5px;
+         background: violet;
+         position: absolute;
+         margin-top: 187px;
+         margin-left: 100px;
+       }
+       .onoff {
+         font-weight: bold;
+         font-size: 20px;
+         text-align: center;
+         margin-top: 5px;
+       }
+       .shoot {
+         width: 175px;
+         height: 115px;
+         background: yellow;
+         position: absolute;
+         margin-left: 200px;
+         border-radius: 0px 10px 0px 0px;
+       }
+       .shootext {
+         font-weight: bold;
+         font-size: 56px;
+         text-align: center;
+         margin-top: 10px;
+       }
+       .time {
+         width: 175px;
+         height: 72.5px;
+         background: orange;
+         position: absolute;
+         margin-left: 200px;
+         margin-top: 115px;
+       }
+       .idbox {
+         width: 175px;
+         height: 62.5px;
+         background: blueviolet;
+         position: absolute;
+         margin-left: 200px;
+         margin-top: 187px;
+         border-radius: 0px 0px 10px 0px;
+       }
+     </style>
+ </head>
+ <body>
+     <div class="box">
 
-        <div class="clamp">
-          Clamp:<div class="onoff" id="cla_value">OFF</div>
-        </div>
+       <div class="cycle">
+         Last Cycle Duration:<br>
+         <div class="cyctext" id="cyc_value"></div>
+       </div>
+       
+       <div class="runtime">
+         Runtime:<br>
+         <span id="day_value">0</span> day 
+         <span id="hour_value">0</span> hour 
+         <span id="minute_value">0</span> minute 
+       </div>
 
-        <div class="inject">
-          Inject:<div class="onoff" id="inj_value">OFF</div>
-        </div>
+       <div class="clamp">
+         Clamp:<div class="onoff" id="cla_value">OFF</div>
+       </div>
 
-        <div class="shut">
-          Shut:<div class="shutext" id="shut_value"></div>
-        </div>
-        <div class="time">
-          Last Cycle On:<br>
-          <span id="day_value">0</span>/<span id="mon_value">0</span>/<span id="year_value">0</span><br>
-          <span id="hour_value">0</span>:<span id="min_value">0</span>:<span id="sec_value">0</span>
-        </div>
-        <div class="idbox">
-          ID:<br>
-          <span id="id_value"></span>
-        </div>
+       <div class="inject">
+         Inject:<div class="onoff" id="inj_value">OFF</div>
+       </div>
 
-      </div>
-   </body>
+       <div class="shoot">
+         Shoot:<div class="shootext" id="shoot_value"></div>
+       </div>
+       <div class="time">
+         Last Cycle On:<br>
+         <span id="date_value"> </span><br>
+         <span id="time_value"> </span>
+       </div>
+       <div class="idbox">
+         ID:<br>
+         <span id="id_value"></span>
+       </div>
+     </div>
+     <button onclick="location.href='/reset'">Reset</button>
+ </body>
 </html>
