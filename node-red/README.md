@@ -19,4 +19,7 @@ localhost:1880
 ```
 to open Node-RED editor.
 
-Import the flows.json into your Node-RED
+For more information you can read  
+https://nodered.org/docs/getting-started/local
+
+Then import the flows.json into your Node-RED
