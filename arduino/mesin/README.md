@@ -1,6 +1,6 @@
 ## Wiring
 
-![alt text](http://url/to/img.png](https://i.imgur.com/cKlN3Vx.jpg)
+![wiring](https://i.imgur.com/cKlN3Vx.jpg)
 
 ## Release Change Log:
 
