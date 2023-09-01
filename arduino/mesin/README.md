@@ -2,7 +2,7 @@
 
 ## 4.0.3 Update
 - Add the ability to store the temporary data to the memory using FS file when the connection of sensor is problem, then send data again when connection is reestablised as a JSON Array format.  
-- Change the way send the time, now using the epoch time (second from 01-01-1970), in this code the epoch is in GMT 00:00, using JS funtion `toLocaleTimeString()` or `toLocaleDateString()` will convert the epoch to the time zone area of the system.
+- Change the way send the time, now using the **Epoch time** (second from 01-01-1970), in this code the epoch is in GMT 00:00, using JS funtion `toLocaleTimeString()` or `toLocaleDateString()` will convert the epoch to the time zone area of the system.
 
 ## 4.0.2 Fix
 Reconnect saved WIFI if after several time sensor become AP and not configured.
