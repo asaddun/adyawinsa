@@ -1,3 +1,7 @@
+## Wiring
+
+![alt text](http://url/to/img.png](https://i.imgur.com/cKlN3Vx.jpg)
+
 ## Release Change Log:
 
 ## 4.0.3 Update
