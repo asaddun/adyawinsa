@@ -9,10 +9,10 @@
 - Change the way send the time, now using the epoch time (second from 01-01-1970), in this code the epoch is in GMT 00:00, using JS funtion `toLocaleTimeString()` or `toLocaleDateString()` will convert the epoch to the time zone area of the system.
 
 ### 4.0.2 Fix
-Reconnect saved WIFI if after several time sensor become AP and not configured.
+- Reconnect saved WIFI if after several time sensor become AP and not configured.
 
 ### 4.0.1 Fix
-Bug fix miss IP when sensor reconnecting WIFI.
+- Bug fix miss IP when sensor reconnecting WIFI.
 
 ### 4.0.0 Release
 #### Always reconnect WIFI
