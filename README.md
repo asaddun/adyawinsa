@@ -1,6 +1,6 @@
 ## In Development:
 #### Improve Over the Air
-    Add ability to do self-update over Internet by pulling binary update file from server.
+- Add ability to do self-update over Internet by pulling binary update file from server.
 
 ## Release Change Log:
 
@@ -16,8 +16,8 @@ Bug fix miss IP when sensor reconnecting WIFI.
 
 ## 4.0.0 Release
 #### Always reconnect WIFI
-    Ability to reconnect to Wifi if disconnected, without entering Wifi Manager Portal.
-    (in some long time, if still disconnected, it will open the Wifi Manager Portal)
+- Ability to reconnect to Wifi if disconnected, without entering Wifi Manager Portal.
+- (in some long time, if still disconnected, it will open the Wifi Manager Portal)
 
 #### 'Reset' button at dashboard
     Ability to reset WIFI Credential to make changes in Wifi Manager Portal.
