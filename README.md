@@ -1,3 +1,7 @@
+## In Development:
+#### Improve Over the Air
+    Add ability to do self-update over Internet by pulling binary update file from server.
+
 ## Release Change Log:
 
 ## 4.0.3 Update
