@@ -1,6 +1,6 @@
 ## In Development:
-#### Improve Over the Air
-- Create 4 swith button for Andon.
+#### Andon
+- Create 4 switch button for Andon, calling some group to solve the problem.
 
 ## Release Change Log:
 
