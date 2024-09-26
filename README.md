@@ -1,8 +1,11 @@
 ## In Development:
 #### Improve Over the Air
-- Add ability to do self-update over Internet by pulling binary update file from server.
+- Create 4 swith button for Andon.
 
 ## Release Change Log:
+
+### 4.0.4 Update
+- Add ability to do self-update over Internet by pulling binary update file from server.
 
 ### 4.0.3 Update
 - Add the ability to store the temporary data to the memory using FS file when the connection of sensor is problem, then send data again when connection is reestablised as a JSON Array format.  
