@@ -4,14 +4,3 @@ Steps:
 1. Upload file 'fimrware.bin' yang terbaru terlebih dulu ke server
 2. Edit 'version.txt' di Lokal ke versi terbaru ("4.0.3" => "4.0.4")
 3. Save 'version.txt' lalu upload ke server
-
-Testing: Mesin 87, 95
-
-
-Log:
-
-4.?.?
-HTTP Update ke server ke "apik.adyawinsa.com"
-
-4.0.3
-Sebelum Update HTTP dibuat, versi yang digunakan sampai {sekarang}.
