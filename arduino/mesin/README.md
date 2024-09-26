@@ -13,20 +13,20 @@ D6 and D7 with Resistor 1k connect to GND of Arduino
 
 ## Release Change Log
 
-## 4.0.4 Update
-Add ability to do self-update, checking to server version then updating when there is an update.
+### 4.0.4 Update
+- Add ability to do self-update, checking to server version then updating when there is an update.
 
 ## 4.0.3 Update
 - Add the ability to store the temporary data to the memory using FS file when the connection of sensor is problem, then send data again when connection is reestablised as a JSON Array format.  
 - Change the way send the time, now using the **Epoch time** (second from 01-01-1970), in this code the epoch is in GMT 00:00, using JS funtion `toLocaleTimeString()` or `toLocaleDateString()` will convert the epoch to the time zone area of the system.
 
-## 4.0.2 Fix
-Reconnect saved WIFI if after several time sensor become AP and not configured.
+### 4.0.2 Fix
+- Reconnect saved WIFI if after several time sensor become AP and not configured.
 
-## 4.0.1 Fix
-Bug fix miss IP when sensor reconnecting WIFI.
+### 4.0.1 Fix
+- Bug fix miss IP when sensor reconnecting WIFI.
 
-## 4.0.0 Release
+### 4.0.0 Release
 #### Always reconnect WIFI
     Ability to reconnect to Wifi if disconnected, without entering Wifi Manager Portal.
     (in some long time, if still disconnected, it will open the Wifi Manager Portal)
