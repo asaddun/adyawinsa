@@ -13,6 +13,9 @@ D6 and D7 with Resistor 1k connect to GND of Arduino
 
 ## Release Change Log
 
+### 4.0.5 Fix
+- Fix failed/miss catch Cycletime if Wemos turned off, store the time each Inject to be calculated when Wemos is from booting.
+
 ### 4.0.4 Update
 - Add ability to do self-update, checking to server version then updating when there is an update.
 
