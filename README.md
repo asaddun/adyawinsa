@@ -4,6 +4,9 @@
 
 ## Release Change Log:
 
+### 4.0.5 Fix
+- Fix failed/miss catch Cycletime if Wemos turned off, store the time each Inject to be calculated when Wemos is from booting.
+
 ### 4.0.4 Update
 - Add ability to do self-update over Internet by pulling binary update file from server.
 
