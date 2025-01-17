@@ -1,10 +1,18 @@
 [
     {
+        "id": "84635b615d072933",
+        "type": "tab",
+        "label": "Mesin dan Suhu",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "aa0690eb18cdb2b8",
         "type": "function",
         "z": "84635b615d072933",
         "name": "parseJSON",
-        "func": "const data = msg.payload;\nconst action = data.action;\nconst id = data.id;\nconst inj = { payload: data.inj };\nconst cycletime = data.cyc;\nconst dt = data.dt;\nconst date = data.date\nconst time = data.time;\n\nconst ip = data.ip;\n\nmsg.payload = {\n    action,\n    id,\n    cycletime,\n    dt,\n    ip,\n    time\n};\nreturn [inj, msg];",
+        "func": "const data = msg.payload;\nconst action = data.action;\nconst id = data.id;\nconst inj = { payload: data.inj };\nconst cycletime = data.cyc;\nconst date = data.date\nconst time = data.time;\nconst version = data.version;\n\nconst ip = data.ip;\n\nmsg.payload = {\n    action,\n    id,\n    cycletime,\n    ip,\n    time,\n    version\n};\nreturn [inj, msg];",
         "outputs": 2,
         "noerr": 0,
         "initialize": "",
@@ -42,7 +50,6 @@
         "y": 220,
         "wires": [
             [
-                "6c2671d5939e6b53",
                 "cf90dbafac657e1d"
             ]
         ]
@@ -151,8 +158,8 @@
         "type": "function",
         "z": "84635b615d072933",
         "name": "parse action",
-        "func": "var data = JSON.parse(msg.payload);\nvar obj = data.action;\nvar i;\nvar j;\nif (obj == \"shoot\") {\n    i = { payload: data };\n} else if (obj == \"temp\") {\n    j = { payload: data };\n}\nreturn [i, j];",
-        "outputs": 2,
+        "func": "var data = JSON.parse(msg.payload);\nvar obj = data.action;\nvar i;\nvar j;\nvar k;\nif (obj == \"shoot\") {\n    i = { payload: data };\n} else if (obj == \"temp\") {\n    j = { payload: data };\n} else if (obj == \"AL\" || obj == \"AQ\" || obj == \"AM\" || obj == \"AT\") {\n    k = { payload: data };\n}\nreturn [i, j, k];",
+        "outputs": 3,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
@@ -165,6 +172,9 @@
             ],
             [
                 "36ce21e06a326063"
+            ],
+            [
+                "7b1772de2e6d5210"
             ]
         ]
     },
@@ -172,8 +182,8 @@
         "id": "6c2671d5939e6b53",
         "type": "debug",
         "z": "84635b615d072933",
-        "name": "debug 2",
-        "active": false,
+        "name": "Response API Andon",
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -181,8 +191,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 540,
-        "y": 260,
+        "x": 740,
+        "y": 480,
         "wires": []
     },
     {
@@ -365,7 +375,7 @@
         "type": "function",
         "z": "84635b615d072933",
         "name": "parseJSON",
-        "func": "const data = JSON.parse(msg.payload);\nconst id = data.id;\nconst cycletime = data.cycletime;\nconst time = data.date + \" \" + data.time;\nconst ip = data.ip;\n\n\nmsg.payload = {\n    id,\n    cycletime,\n    ip,\n    time\n};\nreturn msg;",
+        "func": "const data = JSON.parse(msg.payload);\nconst id = data.id;\nconst cycletime = data.cycletime;\nconst time = data.time;\nconst ip = data.ip;\n\n\nmsg.payload = {\n    id,\n    cycletime,\n    ip,\n    time\n};\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
@@ -423,7 +433,7 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 350,
+        "x": 310,
         "y": 180,
         "wires": [
             [
@@ -692,14 +702,14 @@
         "id": "42a855d02fe64a06",
         "type": "function",
         "z": "84635b615d072933",
-        "name": "Collecting from log.txt",
+        "name": "Collecting from single.txt",
         "func": "var newData = msg.payload;\nvar tempData = flow.get('temp') || [];\ntempData.push(newData);\nflow.set('temp', tempData);\n// var tempData = \"[\";\n// tempData += newData;\n// tempData += \"]\";\n// msg.payload = tempData;\n\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1700,
+        "x": 1710,
         "y": 220,
         "wires": [
             [
@@ -840,9 +850,146 @@
         ]
     },
     {
+        "id": "eca61e80253395ac",
+        "type": "inject",
+        "z": "84635b615d072933",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 1200,
+        "y": 300,
+        "wires": [
+            [
+                "710b5bf38f91011f"
+            ]
+        ]
+    },
+    {
+        "id": "e91fdb0fd6bf9b57",
+        "type": "websocket out",
+        "z": "84635b615d072933",
+        "name": "",
+        "server": "b164d5abb0205a2e",
+        "client": "",
+        "x": 550,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "7b1772de2e6d5210",
+        "type": "json",
+        "z": "84635b615d072933",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 310,
+        "y": 480,
+        "wires": [
+            [
+                "fb8e79937664071f",
+                "e91fdb0fd6bf9b57"
+            ]
+        ]
+    },
+    {
+        "id": "fb8e79937664071f",
+        "type": "http request",
+        "z": "84635b615d072933",
+        "name": "API",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://apik.adyawinsa.com/smsd/api/arduino.php",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 530,
+        "y": 480,
+        "wires": [
+            [
+                "6c2671d5939e6b53"
+            ]
+        ]
+    },
+    {
+        "id": "306e473e0908d3a4",
+        "type": "inject",
+        "z": "84635b615d072933",
+        "name": "61-AL1",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"AL\",\"id\":1000066,\"button\":1,\"time\":1729220531,\"ip\":\"192.168.1.135\"}",
+        "payloadType": "str",
+        "x": 310,
+        "y": 540,
+        "wires": [
+            [
+                "e91fdb0fd6bf9b57"
+            ]
+        ]
+    },
+    {
+        "id": "a53386d745451691",
+        "type": "inject",
+        "z": "84635b615d072933",
+        "name": "61-AL0",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"AL\",\"id\":1000066,\"button\":0,\"time\":1729220531,\"ip\":\"192.168.1.135\"}",
+        "payloadType": "str",
+        "x": 330,
+        "y": 580,
+        "wires": [
+            [
+                "e91fdb0fd6bf9b57"
+            ]
+        ]
+    },
+    {
         "id": "2fa3cc6b3a238722",
         "type": "websocket-listener",
         "path": "/",
+        "wholemsg": "false"
+    },
+    {
+        "id": "b164d5abb0205a2e",
+        "type": "websocket-listener",
+        "path": "/andon",
         "wholemsg": "false"
     }
 ]
