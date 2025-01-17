@@ -1,8 +1,11 @@
 ## In Development:
-#### Andon
-- Create 4 switch button for Andon, calling some group to solve the problem.
+none
 
 ## Release Change Log:
+
+### 4.1.0 Update
+#### Andon
+- Create 4 switch button for Andon, calling some group to solve the problem.
 
 ### 4.0.5 Fix
 - Fix failed/miss catch Cycletime if Wemos turned off, store the time each Inject to be calculated when Wemos is from booting.
