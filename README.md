@@ -1,7 +1,7 @@
-## In Development:
-none
-
 ## Release Change Log:
+
+### 4.1.1 Update
+- Add Logging system to Andon process when the Network is unstable.
 
 ### 4.1.0 Update
 #### Andon
