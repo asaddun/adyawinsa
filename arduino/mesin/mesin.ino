@@ -52,7 +52,7 @@ WebSocketsClient webSocket;
 // DECLARE VARIABLE
 const char* versionUrl = "https://apik.adyawinsa.com/smsd/api/update-arduino/version.txt";
 const char* firmwareUrl = "https://apik.adyawinsa.com/smsd/api/update-arduino/firmware.bin";
-String versionNum = "4.1.0";                  // System Version
+String versionNum = "4.1.1";                  // System Version
 int laststateInject = 0, laststateClamp = 0;  // previous state of the button
 unsigned long timenow;
 unsigned long cycleTime;
@@ -61,8 +61,6 @@ int stateClamp = 0;      // clamp process started
 int stateInject = 0;     // inject process started
 unsigned long lastClamp;
 unsigned long lastInject;
-int heaterState = 0;  // previous state of the button
-int pumpState = 0;    // previous state of the button
 int staCla, staInj = 0, numct, shoot, numdt;
 unsigned long runtime;
 int run_second, run_minute, run_hour, run_day;
@@ -87,9 +85,10 @@ int stateMold = 0, laststateMold = 0;
 String buttonAction;
 int buttonValue, sendAndon = 0;
 unsigned long previousButtonMillis;
+unsigned long leaderLastDebounce = 0, qcLastDebounce = 0, mesinLastDebounce = 0, moldLastDebounce = 0;
 unsigned long previousBlink = 0;
 bool ledState;
-String noMesin = "MC 96";
+int counterLeader, counterQc, counterMesin, counterMold;
 
 const char rootCACertificate[] PROGMEM = R"CERT(
 -----BEGIN CERTIFICATE-----
@@ -709,6 +708,10 @@ void monitorCycleTime() {
   }
 }
 
+unsigned long getMillis() {
+  return millis();
+}
+
 void buttonAndon() {
   // Read the state of the button
   stateLeader = digitalRead(pinLeader);
@@ -716,69 +719,108 @@ void buttonAndon() {
   stateMesin = digitalRead(pinMesin);
   stateMold = digitalRead(pinMold);
 
-
   // Send data as Leader
   if (stateLeader != laststateLeader) {
-    if (stateLeader == HIGH) {
-      // Serial.println("Leader 1");
-      buttonAction = "AL";
-      buttonValue = 1;
-      sendAndon = 1;
-    } else if (stateLeader == LOW) {
-      // Serial.println("Leader 0");
-      buttonAction = "AL";
-      buttonValue = 0;
-      sendAndon = 1;
+    counterLeader++;
+    if (counterLeader == 1) {
+      leaderLastDebounce = getMillis();
     }
-    laststateLeader = stateLeader;
+    if ((millis() - leaderLastDebounce) >= 3000) {
+      if (stateLeader == HIGH) {
+        // Serial.println("Leader 1");
+        buttonAction = "AL";
+        buttonValue = 1;
+        sendAndon = 1;
+      } else if (stateLeader == LOW) {
+        // Serial.println("Leader 0");
+        buttonAction = "AL";
+        buttonValue = 0;
+        sendAndon = 1;
+      }
+      laststateLeader = stateLeader;
+      counterLeader = 0;
+    }
+  }
+  if (stateLeader == laststateLeader) {
+    counterLeader = 0;
   }
 
   // Send data as QC
   if (stateQc != laststateQc) {
-    if (stateQc == HIGH) {
-      // Serial.println("QC 1");
-      buttonAction = "AQ";
-      buttonValue = 1;
-      sendAndon = 1;
-    } else if (stateQc == LOW) {
-      // Serial.println("QC 0");
-      buttonAction = "AQ";
-      buttonValue = 0;
-      sendAndon = 1;
+    counterQc++;
+    if (counterQc == 1) {
+      qcLastDebounce = getMillis();
     }
-    laststateQc = stateQc;
+    if (millis() - qcLastDebounce >= 3000) {
+      if (stateQc == HIGH) {
+        // Serial.println("QC 1");
+        buttonAction = "AQ";
+        buttonValue = 1;
+        sendAndon = 1;
+      } else if (stateQc == LOW) {
+        // Serial.println("QC 0");
+        buttonAction = "AQ";
+        buttonValue = 0;
+        sendAndon = 1;
+      }
+      laststateQc = stateQc;
+      counterQc = 0;
+    }
+  }
+  if (stateQc == laststateQc) {
+    counterQc = 0;
   }
 
   // Send data as Mesin
   if (stateMesin != laststateMesin) {
-    if (stateMesin == HIGH) {
-      // Serial.println("Mesin 1");
-      buttonAction = "AM";
-      buttonValue = 1;
-      sendAndon = 1;
-    } else if (stateMesin == LOW) {
-      // Serial.println("Mesin 0");
-      buttonAction = "AM";
-      buttonValue = 0;
-      sendAndon = 1;
+    counterMesin++;
+    if (counterMesin == 1) {
+      mesinLastDebounce = getMillis();
     }
-    laststateMesin = stateMesin;
+    if (millis() - mesinLastDebounce >= 3000) {
+      if (stateMesin == HIGH) {
+        // Serial.println("Mesin 1");
+        buttonAction = "AM";
+        buttonValue = 1;
+        sendAndon = 1;
+      } else if (stateMesin == LOW) {
+        // Serial.println("Mesin 0");
+        buttonAction = "AM";
+        buttonValue = 0;
+        sendAndon = 1;
+      }
+      laststateMesin = stateMesin;
+      counterMesin = 0;
+    }
+  }
+  if (stateMesin == laststateMesin) {
+    counterMesin = 0;
   }
 
   // Send data as Mold
   if (stateMold != laststateMold) {
-    if (stateMold == HIGH) {
-      // Serial.println("Mold 1");
-      buttonAction = "AT";
-      buttonValue = 1;
-      sendAndon = 1;
-    } else if (stateMold == LOW) {
-      // Serial.println("Mold 0");
-      buttonAction = "AT";
-      buttonValue = 0;
-      sendAndon = 1;
+    counterMold++;
+    if (counterMold == 1) {
+      moldLastDebounce = getMillis();
     }
-    laststateMold = stateMold;
+    if (millis() - moldLastDebounce >= 3000) {
+      if (stateMold == HIGH) {
+        // Serial.println("Mold 1");
+        buttonAction = "AT";
+        buttonValue = 1;
+        sendAndon = 1;
+      } else if (stateMold == LOW) {
+        // Serial.println("Mold 0");
+        buttonAction = "AT";
+        buttonValue = 0;
+        sendAndon = 1;
+      }
+      laststateMold = stateMold;
+      counterMold = 0;
+    }
+  }
+  if (stateMold == laststateMold) {
+    counterMold = 0;
   }
 
   if (stateLeader == HIGH || stateQc == HIGH || stateMesin == HIGH || stateMold == HIGH) {
@@ -801,6 +843,12 @@ void buttonAndon() {
   if (sendAndon == 1) {
     unixTime = time(nullptr);
     sendAndonJSON();
+    // Serial.println("Kirim");
+    // sendAndon = 0;
+  }
+
+  if (websocketConnected == true){
+    andonReadFile();
   }
 }
 
@@ -925,6 +973,43 @@ void writefile() {
   file.close();
 }
 
+void andonWriteFile(String data) {
+  File file = SPIFFS.open("/andon.txt", "a");
+  if (!file) {
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+  // Write cycletime data to file
+  file.println(data);
+
+  // Close file
+  file.close();
+}
+
+void andonReadFile() {
+  File file = SPIFFS.open("/andon.txt", "r");
+
+  if (!file) {
+    // Serial.println("Failed to open file for reading");
+    return;
+  }
+
+  // Read the file contents
+  while (file.available()) {
+    String json_data = file.readStringUntil('\n');
+    json_data.trim();
+    if (json_data.length() > 0) {
+      webSocket.sendTXT(json_data);
+      Serial.println("Buffered JSON data sent: " + json_data);
+    }
+  }
+  // Serial.println(json_data);
+  // webSocket.sendTXT(json_data);
+
+  file.close();
+  SPIFFS.remove("/andon.txt");
+}
+
 // JSON DATA
 void senddata() {
   JSON_Data = "{";
@@ -974,8 +1059,13 @@ void sendAndonJSON() {
   json_andon += ipAddress;
   json_andon += "\"";
   json_andon += "}";
-  Serial.println(json_andon);
-  webSocket.sendTXT(json_andon);
+
+  if (websocketConnected){
+    Serial.println(json_andon);
+    webSocket.sendTXT(json_andon);
+  } else {
+    andonWriteFile(json_andon);
+  }
   sendAndon = 0;
 }
 
@@ -1034,6 +1124,7 @@ void loop() {
   if (sendws == true) {
     senddata();
   }
+  delay(250);
 }
 
 /*
