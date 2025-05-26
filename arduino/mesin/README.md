@@ -13,6 +13,9 @@ D6 and D7 with Resistor 1k connect to GND of Arduino
 
 ## Release Change Log
 
+### 4.1.1 Update
+- Add Logging system to Andon process when the Network is unstable.
+
 ### 4.1.0 Update
 #### Andon
 - Create 4 switch button for Andon, calling some group to solve the problem.
