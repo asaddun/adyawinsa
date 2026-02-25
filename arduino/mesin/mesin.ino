@@ -26,16 +26,13 @@ void (*resetFunc)(void) = 0;  // declare reset function @ address 0
 #include <FS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <WebSocketsServer.h>
-#include <WebSocketsClient.h>
-#include <Hash.h>
 #include <ArduinoJson.h>
-#include <ESP8266mDNS.h>
 #include <WiFiManager.h>
 #include <ESP8266HTTPClient.h>
 #include <ESP8266httpUpdate.h>
-#include <WiFiClientSecure.h>
+// #include <WiFiClientSecureBearSSL.h>
 #include <ArduinoOTA.h>
+#include <PubSubClient.h>
 
 #define pinClamp D6   // Clamp Process
 #define pinInject D7  // Injection Process
@@ -44,385 +41,226 @@ void (*resetFunc)(void) = 0;  // declare reset function @ address 0
 #define pinMesin D5
 #define pinMold D8
 
-WiFiManager wifiManager;
-ESP8266WebServer server(80);
-WebSocketsServer webSocket_server = WebSocketsServer(81);
-WebSocketsClient webSocket;
+// Custom Data Type
+enum StatusType {
+  STATUS_IDLE,
+  STATUS_RUNNING,
+  STATUS_RESTART,
+  STATUS_RESET,
+  STATUS_ERROR
+};
+
+enum AndonType {
+  ANDON_LEADER,
+  ANDON_QC,
+  ANDON_MAINTENANCE,
+  ANDON_TOOL
+};
+
+enum RequestType {
+  REQ_NEW,
+  REQ_SHOOT_FILE,
+  REQ_ANDON_FILE
+};
 
 // DECLARE VARIABLE
 const char* versionUrl = "https://apik.adyawinsa.com/smsd/api/update-arduino/version.txt";
 const char* firmwareUrl = "https://apik.adyawinsa.com/smsd/api/update-arduino/firmware.bin";
-String versionNum = "4.1.1";                  // System Version
-int laststateInject = 0, laststateClamp = 0;  // previous state of the button
+String versionNum = "4.1.1"; // System Version
+bool laststateInject = LOW, laststateClamp = LOW, stateClamp = LOW, stateInject = LOW;  // previous state of the button
 unsigned long timenow;
 unsigned long cycleTime;
-int maxCycleTime = 300;  // maxmimum normal Cycle Time
-int stateClamp = 0;      // clamp process started
-int stateInject = 0;     // inject process started
 unsigned long lastClamp;
 unsigned long lastInject;
-int staCla, staInj = 0, numct, shoot, numdt;
+int staCla, staInj = 0, shoot;
 unsigned long runtime;
 int run_second, run_minute, run_hour, run_day;
 int c_day, c_month, c_year;
-String JSON_Data, formattedTime, currentDate;
-bool sendws = false, wifiConnected = true, sendData = false;
-bool shouldSaveConfig = false;
-char deviceId[10], deviceName[50], WSaddress[16], chPort[5];
-String ipAddress, action = "shoot";
-bool wiFiConnected = true, websocketConnected = false;
-unsigned long wifiMillis, wifiDownSecond, wifiDownMinute;
+bool wifiConnected = true, sendData = false, needResponse = false;
+char deviceId[10], deviceName[50];
+char subTopic[36], pubTopic[36];
+bool shouldSaveConfig = false, readConfig = false;
+String ipAddress;
+bool wiFiConnected = true, mqttConnected = false, savingDataToFile = false;
+unsigned long wifiMillis, wifiDownSecond, wifiDownMinute, MqttMillis;
 unsigned long unixTime, startTime, startIdle;
+int timeToIdle = 5 * 60;
+StatusType deviceStatus = STATUS_IDLE;
+const char* statusText[] = {
+  "idle",
+  "running",
+  "restarting",
+  "resetting",
+  "error"
+};
 struct tm timeinfo;
 const int timeZone = 7 * 3600;
-unsigned long previousCheckSeconds;
+unsigned long previousCheckSeconds, previousStatusSeconds;
 bool is_update = false;
-int port = 1880;
-int stateLeader = 0, laststateLeader = 0;
-int stateQc = 0, laststateQc = 0;
-int stateMesin = 0, laststateMesin = 0;
-int stateMold = 0, laststateMold = 0;
+bool stateLeader = 0, laststateLeader = 0;
+bool stateQc = 0, laststateQc = 0;
+bool stateMesin = 0, laststateMesin = 0;
+bool stateMold = 0, laststateMold = 0;
 String buttonAction;
-int buttonValue, sendAndon = 0;
+AndonType andonType = ANDON_LEADER;
+const char* andonAction[] = {
+  "AL",
+  "AQ",
+  "AM",
+  "AT"
+};
+bool buttonValue = 0, sendAndon = 0;
 unsigned long previousButtonMillis;
 unsigned long leaderLastDebounce = 0, qcLastDebounce = 0, mesinLastDebounce = 0, moldLastDebounce = 0;
 unsigned long previousBlink = 0;
 bool ledState;
-int counterLeader, counterQc, counterMesin, counterMold;
+uint8_t counterLeader, counterQc, counterMesin, counterMold;
+struct Request {
+  unsigned long id;
+  String payload;
+  unsigned long timeSent;
+  bool waiting;
+  RequestType type;
+};
+const uint8_t MAX_REQUESTS = 10;
+const int REQUEST_TIMEOUT = 5000;
 
-const char rootCACertificate[] PROGMEM = R"CERT(
------BEGIN CERTIFICATE-----
-MIIGEzCCA/ugAwIBAgIQfVtRJrR2uhHbdBYLvFMNpzANBgkqhkiG9w0BAQwFADCB
-iDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCk5ldyBKZXJzZXkxFDASBgNVBAcTC0pl
-cnNleSBDaXR5MR4wHAYDVQQKExVUaGUgVVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNV
-BAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkwHhcNMTgx
-MTAyMDAwMDAwWhcNMzAxMjMxMjM1OTU5WjCBjzELMAkGA1UEBhMCR0IxGzAZBgNV
-BAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4GA1UEBxMHU2FsZm9yZDEYMBYGA1UE
-ChMPU2VjdGlnbyBMaW1pdGVkMTcwNQYDVQQDEy5TZWN0aWdvIFJTQSBEb21haW4g
-VmFsaWRhdGlvbiBTZWN1cmUgU2VydmVyIENBMIIBIjANBgkqhkiG9w0BAQEFAAOC
-AQ8AMIIBCgKCAQEA1nMz1tc8INAA0hdFuNY+B6I/x0HuMjDJsGz99J/LEpgPLT+N
-TQEMgg8Xf2Iu6bhIefsWg06t1zIlk7cHv7lQP6lMw0Aq6Tn/2YHKHxYyQdqAJrkj
-eocgHuP/IJo8lURvh3UGkEC0MpMWCRAIIz7S3YcPb11RFGoKacVPAXJpz9OTTG0E
-oKMbgn6xmrntxZ7FN3ifmgg0+1YuWMQJDgZkW7w33PGfKGioVrCSo1yfu4iYCBsk
-Haswha6vsC6eep3BwEIc4gLw6uBK0u+QDrTBQBbwb4VCSmT3pDCg/r8uoydajotY
-uK3DGReEY+1vVv2Dy2A0xHS+5p3b4eTlygxfFQIDAQABo4IBbjCCAWowHwYDVR0j
-BBgwFoAUU3m/WqorSs9UgOHYm8Cd8rIDZsswHQYDVR0OBBYEFI2MXsRUrYrhd+mb
-+ZsF4bgBjWHhMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8ECDAGAQH/AgEAMB0G
-A1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAbBgNVHSAEFDASMAYGBFUdIAAw
-CAYGZ4EMAQIBMFAGA1UdHwRJMEcwRaBDoEGGP2h0dHA6Ly9jcmwudXNlcnRydXN0
-LmNvbS9VU0VSVHJ1c3RSU0FDZXJ0aWZpY2F0aW9uQXV0aG9yaXR5LmNybDB2Bggr
-BgEFBQcBAQRqMGgwPwYIKwYBBQUHMAKGM2h0dHA6Ly9jcnQudXNlcnRydXN0LmNv
-bS9VU0VSVHJ1c3RSU0FBZGRUcnVzdENBLmNydDAlBggrBgEFBQcwAYYZaHR0cDov
-L29jc3AudXNlcnRydXN0LmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAMr9hvQ5Iw0/H
-ukdN+Jx4GQHcEx2Ab/zDcLRSmjEzmldS+zGea6TvVKqJjUAXaPgREHzSyrHxVYbH
-7rM2kYb2OVG/Rr8PoLq0935JxCo2F57kaDl6r5ROVm+yezu/Coa9zcV3HAO4OLGi
-H19+24rcRki2aArPsrW04jTkZ6k4Zgle0rj8nSg6F0AnwnJOKf0hPHzPE/uWLMUx
-RP0T7dWbqWlod3zu4f+k+TY4CFM5ooQ0nBnzvg6s1SQ36yOoeNDT5++SR2RiOSLv
-xvcRviKFxmZEJCaOEDKNyJOuB56DPi/Z+fVGjmO+wea03KbNIaiGCpXZLoUmGv38
-sbZXQm2V0TP2ORQGgkE49Y9Y3IBbpNV9lXj9p5v//cWoaasm56ekBYdbqbe4oyAL
-l6lFhd2zi+WJN44pDfwGF/Y4QA5C5BIG+3vzxhFoYt/jmPQT2BVPi7Fp2RBgvGQq
-6jG35LWjOhSbJuMLe/0CjraZwTiXWTb2qHSihrZe68Zk6s+go/lunrotEbaGmAhY
-LcmsJWTyXnW0OMGuf1pGg+pRyrbxmRE1a6Vqe8YAsOf4vmSyrcjC8azjUeqkk+B5
-yOGBQMkKW+ESPMFgKuOXwIlCypTPRpgSabuY0MLTDXJLR27lk8QyKGOHQ+SwMj4K
-00u/I5sUKUErmgQfky3xxzlIPK1aEn8=
------END CERTIFICATE-----
-)CERT";
-X509List cert(rootCACertificate);
+// OBJECTS
+WiFiManager wifiManager;
+WiFiManagerParameter customDeviceId("deviceId", "Device Id", deviceId, 10);
+WiFiManagerParameter customDeviceName("deviceName", "Device Name", deviceName, 50);
+ESP8266WebServer server(80);
+// BearSSL::WiFiClientSecure client;
+WiFiClient client;
+PubSubClient mqttClient(client);
+Request requests[MAX_REQUESTS];
 
-char html_template[] PROGMEM = R"=====(
-  <!DOCTYPE html>
-  <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Dashboard</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <style>
-          .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            z-index: 9999;
-            text-align: center;
-            padding-top: 20%;
+// =========== MQTT ===========
+void callback(char* topic, byte* payload, unsigned int length) {
+  StaticJsonDocument<256> doc;
+  DeserializationError error = deserializeJson(doc, payload, length);
+  if (error) {
+    Serial.println("Gagal parsing JSON");
+    return;
+  }
+
+  const char* actionMessage = doc["action"];
+  const char* valueMessage = doc["value"];
+
+  if (strcmp(actionMessage, "power") == 0){
+    if (strcmp(valueMessage, "restart") == 0) {
+      deviceStatus = STATUS_RESTART;
+      sendStatusData();
+      delay(1000);
+      ESP.restart();
+    } else if (strcmp(valueMessage, "reset") == 0) {
+      deviceStatus = STATUS_RESET;
+      sendStatusData();
+      delay(1000);
+      wifiManager.resetSettings();
+      ESP.restart();
+    }
+
+  } else if (strcmp(actionMessage, "status") == 0) {
+    unsigned long idMessage = doc["id"];
+    bool found = false;
+
+    for (int i = 0; i < MAX_REQUESTS; i++) {
+      if (requests[i].waiting && requests[i].id == idMessage) {
+        found = true;
+        RequestType t = requests[i].type;
+
+        if (strcmp(valueMessage, "success") == 0) {
+          Serial.printf("[MQTT] Response ID %d received\n", idMessage);
+          clearRequest(idMessage);  // hapus atau tandai sudah selesai
+          if (t == REQ_SHOOT_FILE) {
+            SPIFFS.remove("/down.txt");
+            savingDataToFile = false;
           }
-        </style>
-        <script>
-          function updateRuntime() {
-            const currentUnixTime = Math.floor(Date.now() / 1000); // Current Unix time in seconds
-            const runtime = injectTime_data - startTime_data; // Difference in seconds
-            let displayTime;
-            if (runtime < 3600) {
-              const minutes = Math.floor(runtime / 60);
-              displayTime = minutes + ' minute' + (minutes > 1 ? 's' : '');
-            } else if (runtime < 86400) {
-              const hours = Math.floor(runtime / 3600);
-              const minutes = Math.floor((runtime % 3600) / 60);
-              displayTime = hours + ' hour' + (hours > 1 ? 's' : '') + ' ' + minutes + ' minute' + (minutes > 1 ? 's' : '');
-            } else {
-              const days = Math.floor(runtime / 86400);
-              const hours = Math.floor((runtime % 86400) / 3600);
-              displayTime = days + ' day' + (days > 1 ? 's' : '') + ' ' + hours + ' hour' + (hours > 1 ? 's' : '');
-            }
-
-            document.getElementById('runtime').innerText = displayTime;
+          if (t == REQ_ANDON_FILE) {
+            SPIFFS.remove("/andon.txt");
+            savingDataToFile = false;
           }
-          let injectTime_data;
-          let startTime_data;
-          let socket = new WebSocket("ws://" + window.location.hostname + ":81");
-          socket.onmessage  = 
-          function(event) {  
-            let full_data = event.data;
-            console.log(full_data);
-            let data = JSON.parse(full_data);
-            let id_data = data.id;
-            let name_data = data.name;
-            let clamp_data = data.cla;
-            let inject_data = data.inj;
-            let cycle_data = data.cyc;
-            let shoot_data = data.shoot;
-            injectTime_data = data.time;
-            startTime_data = data.startTime;
-            let version_data = data.version;
+        } else {
+          Serial.printf("Respon NG untuk ID %d\n", idMessage);
+          // kamu bisa putuskan mau retry, simpan SPIFFS, dll
+        }
 
-            if (inject_data == 1){ // take the timestamp when inject
-              let unixTime = injectTime_data;
-              let date = new Date(unixTime * 1000); // Convert to milliseconds
-              let options = { day: 'numeric', month: 'numeric', year: 'numeric' };
-              let formattedDate = date.toLocaleDateString("en-GB", options);
-              let formattedTime = date.toLocaleTimeString("en-GB");
-
-              document.getElementById("date_value").innerHTML = formattedDate;
-              document.getElementById("time_value").innerHTML = formattedTime;
-
-              // showing runtime
-              updateRuntime();
-            }
-
-            if (clamp_data == 0) {
-              clamp_data = "X";
-              clamp_data = clamp_data.fontcolor("red");
-            } else {
-              clamp_data = "O";
-              clamp_data = clamp_data.fontcolor("green");
-            }
-            if (inject_data == 0) {
-              inject_data = "X";
-              inject_data = inject_data.fontcolor("red");
-            } else {
-              inject_data = "O";
-              inject_data = inject_data.fontcolor("green");
-            }
-
-            document.getElementById("id_value").innerHTML = id_data;
-            document.getElementById("ver_value").innerHTML = version_data;
-            document.getElementById("name_value").innerHTML = name_data;
-            document.title = name_data;
-            document.getElementById("cla_value").innerHTML = clamp_data;
-            document.getElementById("inj_value").innerHTML = inject_data;
-            document.getElementById("cyc_value").innerHTML = cycle_data;
-            document.getElementById("shoot_value").innerHTML = shoot_data;
-          };
-        </script>
-    </head>
-    <body>
-      <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <div>Loading...</div>
-      </div>
-      <script>
-        document.getElementById('loadingOverlay').style.display = 'block';
-      </script>
-      <div class="container-fluid mt-2 text-center">
-        <div class="card col-md-4">
-          <div class="card-header bg-primary text-white text-center">
-            <h5 id="name_value" class="card-title mb-0">Loading..</h5>
-          </div>
-          <div class="card-body">
-            <div class="row mb-2">
-              <div class="col-6">
-                <h5>Cycletime:</h5>
-                <span id="cyc_value" class="fs-2">...</span>
-              </div>
-              <div class="col-6">
-                <h5>Total Shoot:</h5>
-                <span id="shoot_value" class="fs-2">...</span>
-              </div>
-            </div>
-            <div class="row mb-2">
-              <div class="col-6">
-                <h5>Last Shoot:</h5>
-                <span id="date_value" class="fs-5">...</span> <span id="time_value" class="fs-5"></span>
-              </div>
-              <div class="col-6">
-                <h5>Uptime:</h5>
-                <span id="runtime" class="fs-5">..</span>
-              </div>
-            </div>
-            <hr>
-            <div class="row">
-              <div class="col-3">
-                <h6>Clamp</h6>
-                <p id="cla_value" class="fs-4 fw-bold">-</p>
-              </div>
-              <div class="col-3">
-                <h6>Inject</h6>
-                <p id="inj_value" class="fs-4 fw-bold">-</p>
-              </div>
-              <div class="col-3">
-                <h6>MC ID:</h6>
-                <p id="id_value" class="fs-6">...</p>
-              </div>
-              <div class="col-3">
-                <h6>Version:</h6>
-                <p id="ver_value" class="fs-6">...</p>
-              </div>
-            </div>
-          </div>
-          <div class="card-footer">
-            <button class="btn btn-danger" onclick="location.href='/reset'">Reset</button>
-          </div>
-        </div>
-      </div>
-      <script>
-        window.addEventListener('load', function() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        });
-      </script>
-    </body>
-  </html>
-)=====";
-
-char html_reset[] PROGMEM = R"=====(
-  <!DOCTYPE html>
-  <html>
-  <script>
-    function reset() {
-      var x = document.getElementById("reset").value;
-      var text = "";
-      if (x == "1234"){
-        alert("ESP will reset");
-        window.location.pathname = ('/confirm_reset');
-      } else {
-        alert("Incorrect Password!!");
+        break;  // selesai, keluar dari loop
       }
     }
-    function showPass() {
-      var x = document.getElementById("reset");
-      if (x.type === "password") {
-        x.type = "text";
+
+    if (!found) {
+      // Serial.println("Respon tidak ditemukan di daftar request aktif!");
+    }
+  } else if (strcmp(actionMessage, "debug") == 0) {
+    if (strcmp(valueMessage, "file") == 0) {
+      bool setValue = doc["set"].as<bool>();
+      if (setValue) {
+        mqttConnected = true;
+        Serial.println("file-true");
       } else {
-        x.type = "password";
+        mqttConnected = false;
+        Serial.println("file-false");
       }
     }
-  </script>
-  <body>
-    Password to Reset:<br>
-    <input id="reset" type="password"><br>
-    <input type="checkbox" onclick="showPass()">Show Password
-    <br><br>
-    <button onclick="reset()">Reset</button>
-  </body>
-  </html>
-)=====";
-
-// BEGIN OF WEBSOCKET PART
-// as WEBSOCKET SERVER
-void webSocketEvent_server(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
-  switch (type) {
-    case WStype_DISCONNECTED:
-      Serial.printf("[%u] Disconnected!\n", num);
-      break;
-    case WStype_CONNECTED:
-      {
-        IPAddress ip = webSocket_server.remoteIP(num);
-        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        // sendws = true;
-
-        // send message to client
-        // webSocket_server.sendTXT(num, "Connected");
-      }
-      break;
-    case WStype_TEXT:
-      Serial.printf("[%u] get Text: %s\n", num, payload);
-
-      // send message to client
-      // webSocket.sendTXT(num, "message here");
-
-      // send data to all connected clients
-      // webSocket.broadcastTXT("message here");
-      break;
-    case WStype_BIN:
-      Serial.printf("[%u] get binary length: %u\n", num, length);
-      hexdump(payload, length);
-
-      // send message to client
-      // webSocket.sendBIN(num, payload, length);
-      break;
+    if (strcmp(valueMessage, "clear-file") == 0) {
+      SPIFFS.remove("/down.txt");
+      SPIFFS.remove("/andon.txt");
+      Serial.println("file cleared");
+    }      
   }
 }
 
-// as WEBSOCKET CLIENT
-void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
-  switch (type) {
-    case WStype_DISCONNECTED:
-      Serial.printf("[WS CLIENT] Disconnected!\n");
-      websocketConnected = false;
-      break;
-    case WStype_CONNECTED:
-      {
-        Serial.printf("[WS CLIENT] Connected to ws://%s:%d%s\n", WSaddress, port, payload);
+void reconnectMQTT() {
+  StaticJsonDocument<256> doc;
 
-        // send message to server when Connected
-        // Serial.println("[WS CLIENT] SENT: Connected");
-        // webSocket.sendTXT("Connected");
-        websocketConnected = true;
-      }
-      break;
-    case WStype_TEXT:
-      Serial.printf("[WS CLIENT] RESPONSE: %s\n", payload);
-      break;
-    case WStype_BIN:
-      Serial.printf("[WS CLIENT] get binary length: %u\n", length);
-      hexdump(payload, length);
-      break;
-    case WStype_PING:
-      // pong will be send automatically
-      Serial.printf("[WS CLIENT] get ping\n");
-      break;
-    case WStype_PONG:
-      // answer to a ping we send
-      Serial.printf("[WS CLIENT] get pong\n");
-      break;
-  }
+  doc["action"] = "status";
+  doc["id"] = deviceId;
+  doc["name"] = deviceName;
+  doc["value"] = "offline";
+  doc["time"] = time(nullptr);
+
+  char jsonBuffer[256];
+  size_t len = serializeJson(doc, jsonBuffer);
+
+  if (mqttClient.connected()) return;
+
+  if (millis() - MqttMillis < 5000) return;
+  MqttMillis = millis();
+
+  Serial.println("[MQTT] Reconnecting...");
+
+  mqttClient.disconnect();
+
+  if (mqttClient.connect(deviceId, pubTopic, 1, true, jsonBuffer)) {
+    mqttConnected = true;
+    Serial.println("[MQTT] Connected");
+    digitalWrite(LED_BUILTIN, LOW);
+
+    mqttClient.subscribe(subTopic);
+    Serial.print("[MQTT] Subscribed to: ");
+    Serial.println(subTopic);
+
+    sendStatusData();
+  } else {
+    mqttConnected = false;
+    Serial.print("[MQTT] Failed, rc=");
+    Serial.println(mqttClient.state());
+  } 
 }
-// END OF WEBSOCKET PART
+// =========== MQTT ===========
+
 
 // BEGIN OF WEBSERVER HANDLING PART
-void handleMain() {
-  server.send_P(200, "text/html", html_template);
-}
-void handleReset() {
-  server.send_P(200, "text/html", html_reset);
-}
-void ConfirmReset() {
-  server.send_P(200, "text/html", "<html><body><p>ESP has been reset</p></body></html>");
-  delay(3000);
-  wifiManager.resetSettings();
-  ESP.restart();
-}
-void handleRestart() {
-  server.send_P(200, "text/html", "<html><body><p>ESP has been restart</p></body></html>");
-  ESP.restart();
-}
-void handleNotFound() {
-  server.send(404, "text/html", "<html><body><p>404 Error</p></body></html>");
+void handleRoot() {
+  // URL tujuan redirect
+  String redirectUrl = "http://api.adyawinsa.com:1880/sensor?id=";
+  redirectUrl += deviceId;
+
+  // Kirim header redirect 302
+  server.sendHeader("Location", redirectUrl, true);
+  server.send(302, "text/plain", "Redirecting...");
 }
 // END OF WEBSERVER HANDLING PART
 
@@ -438,6 +276,11 @@ void connectWifi() {
     Serial.println("*wm:Failed to connect and hit timeout");
     delay(1000);
     connectWifi();
+  } else {
+    if (!readConfig){
+      strcpy(deviceId, customDeviceId.getValue());
+      strcpy(deviceName, customDeviceName.getValue());
+    }
   }
 }
 
@@ -446,9 +289,7 @@ void setup() {
   delay(500);
 
   Serial.println("");
-  String versiSW = "[ARDUINO] Setup v";
-  versiSW += versionNum;
-  Serial.println(versiSW);
+  Serial.println("[SYSTEM] Booting..");
 
   Serial.println("*wm:Mounting FS...");
   // read configuration from FS json
@@ -460,16 +301,12 @@ void setup() {
       Serial.println("*wm:Reading config file");
       File configFile = SPIFFS.open("/config.json", "r");
       if (configFile) {
-        Serial.println("*wm:Opened config file");
+        Serial.print("*wm:Opened config file: ");
         size_t size = configFile.size();
         // Allocate a buffer to store contents of the file.
         std::unique_ptr<char[]> buf(new char[size]);
 
         configFile.readBytes(buf.get(), size);
-        // DynamicJsonBuffer jsonBuffer;
-        // JsonObject& json = jsonBuffer.parseObject(buf.get());
-        // json.printTo(Serial);
-        // if (json.success()) {
         DynamicJsonDocument json(512);
         auto deserializeError = deserializeJson(json, buf.get());
         serializeJson(json, Serial);
@@ -477,7 +314,7 @@ void setup() {
           Serial.println("\n*wm:parsed json");
           strcpy(deviceId, json["deviceId"]);
           strcpy(deviceName, json["deviceName"]);
-          strcpy(WSaddress, json["WSaddress"]);
+          readConfig = true;
         } else {
           Serial.println("*wm:Failed to load json config");
         }
@@ -491,30 +328,18 @@ void setup() {
   wifiMillis = millis();
 
   // WIFIMANAGER SETUP
-  // WiFiManagerParameter <function name>(id/name, placeholder/prompt, default, length)
-  WiFiManagerParameter customDeviceId("deviceId", "Device Id", deviceId, 10);
-  WiFiManagerParameter customDeviceName("deviceName", "Device Name", deviceName, 50);
-  WiFiManagerParameter customWSaddress("WSaddress", "Websocket Address", WSaddress, 16);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.addParameter(&customDeviceId);
   wifiManager.addParameter(&customDeviceName);
-  wifiManager.addParameter(&customWSaddress);
 
   connectWifi();
-
   // wifiManager.resetSettings();
-  // AP esp if can't connect to wifi
-  // wifiManager.autoConnect();
-  strcpy(deviceId, customDeviceId.getValue());
-  strcpy(deviceName, customDeviceName.getValue());
-  strcpy(WSaddress, customWSaddress.getValue());
 
   if (shouldSaveConfig) {
     Serial.println("*wm:Saving config");
     DynamicJsonDocument json(512);
     json["deviceId"] = deviceId;
     json["deviceName"] = deviceName;
-    json["WSaddress"] = WSaddress;
 
     // save inputted parameter to config file
     File configFile = SPIFFS.open("/config.json", "w");
@@ -527,7 +352,7 @@ void setup() {
     // end save
   }
 
-  Serial.println("\n[ARDUINO] WiFi Connected..");
+  Serial.println("\n[SYSTEM] WiFi Connected.");
   wifiDownSecond = (millis() - wifiMillis) / 1000;  // Wifi Downtime in second
   wifiDownMinute = wifiDownSecond / 60;             // Wifi Downtime in minute
   delay(100);
@@ -535,16 +360,12 @@ void setup() {
   wifiDownSecond = 0;
   wifiDownMinute = 0;
 
-  Serial.print("[ARDUINO] Local IP: ");
+  Serial.print("[SYSTEM] Local IP: ");
   Serial.println(WiFi.localIP());
   ipAddress = WiFi.localIP().toString();
 
   // WEBSERVER SETUP
-  server.on("/", handleMain);
-  server.on("/reset", handleReset);
-  server.on("/confirm_reset", ConfirmReset);
-  server.on("/restart", handleRestart);
-  server.onNotFound(handleNotFound);
+  server.on("/", handleRoot);
   server.begin();
 
   // NTP SETUP
@@ -564,19 +385,14 @@ void setup() {
   Serial.println("");
   Serial.println("[NTP] NTP time has been synchronized");
 
-  // WEBSOCKET SERVER SETUP
-  Serial.println("[WS SERVER] Starting WebSocket Server");
-  webSocket_server.begin();
-  webSocket_server.onEvent(webSocketEvent_server);
+  // client.setInsecure();
+  // client.setBufferSizes(512, 512);
 
-  // WEBSOCKET CLIENT SETUP
-  Serial.print("[WS CLIENT] Trying connect to ws://");
-  Serial.print(WSaddress);
-  Serial.println(":1880/");
-
-  webSocket.begin(WSaddress, port, "/");  // Websocket server address
-  webSocket.onEvent(webSocketEvent);
-  webSocket.setReconnectInterval(5000);
+  sprintf(subTopic, "sensor/injection/%s/response", deviceId);
+  sprintf(pubTopic, "sensor/injection/%s/request", deviceId);
+  mqttClient.setBufferSize(4096);
+  mqttClient.setServer("192.168.3.245", 1883);
+  mqttClient.setCallback(callback);
 
   // OTA Setup
   ArduinoOTA.setPassword("1234");
@@ -618,7 +434,7 @@ void setup() {
 
   checkFirmwareUpdate();
 
-  Serial.println("[ARDUINO] System ready");
+  Serial.println("[SYSTEM] System ready");
 }
 
 // CAPTURE INJECT PROCESS
@@ -629,13 +445,15 @@ void monitorCycleTime() {
     if (stateClamp == HIGH) {  // Clamp = ON
       lastClamp = millis();
       staCla = 1;
-      sendws = true;
+      sendData = true;
     } else {  // Clamp = OFF
       staCla = 0;
-      sendws = true;
+      sendData = true;
     }
     laststateClamp = stateClamp;
+    startIdle = millis();
   }
+
   if (stateClamp == HIGH) {
     stateInject = digitalRead(pinInject);
     if (stateInject != laststateInject) {
@@ -659,21 +477,6 @@ void monitorCycleTime() {
         // NTP get data
         unixTime = time(nullptr);
 
-        // Checking connection before sending data
-        if (wiFiConnected == false || websocketConnected == false) {
-          numct = cycleTime;
-          writefile();
-        } else if (wiFiConnected == true && websocketConnected == true) {
-          File file = SPIFFS.open("/down.txt", "r");
-          if (file && websocketConnected == true) {
-            file.close();
-            readfile();
-          } else {
-            numct = cycleTime;
-          }
-          file.close();
-        }
-
         // Checking if the Wemos is from Booting, to get cycletime from last inject before shut down
         if (shoot == 0) {
           File savedFile = SPIFFS.open("/last.txt", "r");
@@ -682,8 +485,7 @@ void monitorCycleTime() {
           } else {
             String fileContent = savedFile.readString();
             unsigned long savedLast = fileContent.toInt();  // Convert to integer
-
-            numct = unixTime - savedLast;
+            cycleTime = unixTime - savedLast;
           }
           savedFile.close();
         } else {
@@ -696,13 +498,17 @@ void monitorCycleTime() {
           }
           lastFile.close();
         }
+
+        needResponse = true;
         shoot += 1;
-        sendws = true;
-        startIdle = millis();
+        sendData = true;
+        deviceStatus = STATUS_RUNNING;
+        sendStatusData();
       } else {  // Inject = OFF
         staInj = 0;
-        sendws = true;
+        sendData = true;
       }
+      startIdle = millis();
     }
     laststateInject = stateInject;
   }
@@ -728,15 +534,16 @@ void buttonAndon() {
     if ((millis() - leaderLastDebounce) >= 3000) {
       if (stateLeader == HIGH) {
         // Serial.println("Leader 1");
-        buttonAction = "AL";
+        // buttonAction = "AL";
         buttonValue = 1;
-        sendAndon = 1;
+        // sendAndon = 1;
       } else if (stateLeader == LOW) {
         // Serial.println("Leader 0");
-        buttonAction = "AL";
+        // buttonAction = "AL";
         buttonValue = 0;
-        sendAndon = 1;
       }
+      andonType = ANDON_LEADER;
+      sendAndon = 1;
       laststateLeader = stateLeader;
       counterLeader = 0;
     }
@@ -754,15 +561,16 @@ void buttonAndon() {
     if (millis() - qcLastDebounce >= 3000) {
       if (stateQc == HIGH) {
         // Serial.println("QC 1");
-        buttonAction = "AQ";
+        // buttonAction = "AQ";
         buttonValue = 1;
-        sendAndon = 1;
+        // sendAndon = 1;
       } else if (stateQc == LOW) {
         // Serial.println("QC 0");
-        buttonAction = "AQ";
+        // buttonAction = "AQ";
         buttonValue = 0;
-        sendAndon = 1;
       }
+      andonType = ANDON_QC;
+      sendAndon = 1;
       laststateQc = stateQc;
       counterQc = 0;
     }
@@ -780,15 +588,16 @@ void buttonAndon() {
     if (millis() - mesinLastDebounce >= 3000) {
       if (stateMesin == HIGH) {
         // Serial.println("Mesin 1");
-        buttonAction = "AM";
+        // buttonAction = "AM";
         buttonValue = 1;
-        sendAndon = 1;
+        // sendAndon = 1;
       } else if (stateMesin == LOW) {
         // Serial.println("Mesin 0");
-        buttonAction = "AM";
+        // buttonAction = "AM";
         buttonValue = 0;
-        sendAndon = 1;
       }
+      andonType = ANDON_MAINTENANCE;
+      sendAndon = 1;
       laststateMesin = stateMesin;
       counterMesin = 0;
     }
@@ -797,7 +606,7 @@ void buttonAndon() {
     counterMesin = 0;
   }
 
-  // Send data as Mold
+  // Send data as Tool
   if (stateMold != laststateMold) {
     counterMold++;
     if (counterMold == 1) {
@@ -806,15 +615,16 @@ void buttonAndon() {
     if (millis() - moldLastDebounce >= 3000) {
       if (stateMold == HIGH) {
         // Serial.println("Mold 1");
-        buttonAction = "AT";
+        // buttonAction = "AT";
         buttonValue = 1;
-        sendAndon = 1;
+        // sendAndon = 1;
       } else if (stateMold == LOW) {
         // Serial.println("Mold 0");
-        buttonAction = "AT";
+        // buttonAction = "AT";
         buttonValue = 0;
-        sendAndon = 1;
       }
+      andonType = ANDON_TOOL;
+      sendAndon = 1;
       laststateMold = stateMold;
       counterMold = 0;
     }
@@ -824,7 +634,6 @@ void buttonAndon() {
   }
 
   if (stateLeader == HIGH || stateQc == HIGH || stateMesin == HIGH || stateMold == HIGH) {
-    // digitalWrite(LED_BUILTIN, HIGH);  // Turn on the LED
     unsigned long blinkMillis = millis();
     if (blinkMillis - previousBlink >= 500) {
       // Save the last time the LED was toggled
@@ -835,20 +644,14 @@ void buttonAndon() {
       digitalWrite(LED_BUILTIN, ledState);
     }
   } else {
-    // digitalWrite(LED_BUILTIN, LOW);   // Turn off the LED
     digitalWrite(LED_BUILTIN, LOW);
     ledState = LOW;  // Reset the LED state
   }
 
   if (sendAndon == 1) {
     unixTime = time(nullptr);
-    sendAndonJSON();
-    // Serial.println("Kirim");
-    // sendAndon = 0;
-  }
-
-  if (websocketConnected == true){
-    andonReadFile();
+    needResponse = true;
+    sendAndonData();
   }
 }
 
@@ -871,6 +674,7 @@ void timeToCheck() {
         int idleSeconds = (millis() - startIdle) / 1000;
         // Idle for 600 seconds (10 minutes)
         if (idleSeconds >= 600) {
+          deviceStatus = STATUS_IDLE;
           checkFirmwareUpdate();
         }
       }
@@ -884,22 +688,24 @@ void timeToCheck() {
 
 // CHECK FIRMWARE UPDATE
 void checkFirmwareUpdate() {
-  WiFiClientSecure client;
-  client.setTrustAnchors(&cert);
-  HTTPClient https;
-  https.begin(client, versionUrl);
+  WiFiClientSecure updateClient;
+  updateClient.setInsecure();
+  updateClient.setBufferSizes(512, 512);
+
+  HTTPClient httpClient;
+  httpClient.begin(updateClient, versionUrl);
 
   Serial.println("[UPDATE] Checking for new Firmware..");
 
-  int httpCode = https.GET();
+  int httpCode = httpClient.GET();
   if (httpCode == HTTP_CODE_OK) {
-    String latestVersion = https.getString();
+    String latestVersion = httpClient.getString();
     latestVersion.trim();
     Serial.printf("[UPDATE] Current version: %s\n", versionNum);
     Serial.printf("[UPDATE] Latest version: %s\n", latestVersion);
     if (versionNum != latestVersion) {
       Serial.println("[UPDATE] New firmware available. Updating...");
-      t_httpUpdate_return ret = ESPhttpUpdate.update(client, firmwareUrl);
+      t_httpUpdate_return ret = ESPhttpUpdate.update(updateClient, firmwareUrl);
 
       if (ret != HTTP_UPDATE_OK) {
         Serial.printf("[UPDATE] Update failed (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
@@ -914,183 +720,427 @@ void checkFirmwareUpdate() {
   } else {
     Serial.printf("[UPDATE] Failed to check for updates (%d)\n", httpCode);
   }
-  https.end();
+  httpClient.end();
 }
+
+void publishData(const char* payload, RequestType type = REQ_NEW) {
+  StaticJsonDocument<256> doc;
+  DeserializationError error = deserializeJson(doc, payload);
+
+  unsigned long time = doc["time"];
+  if (!mqttClient.connected() || mqttConnected == false) {
+    Serial.println("[MQTT] Publish gagal, MQTT tidak terhubung");
+    if (needResponse == true){
+      Serial.println("[MQTT] Menyimpan pesan");
+      saveDataToFile(payload);
+    }
+    return;
+  }
+
+  if (mqttClient.publish(pubTopic, payload)) {
+    Serial.print("[MQTT] Publish: ");
+    Serial.println(payload);
+    if (needResponse == true){
+      addRequest(time, payload, type);
+    }
+  } else {
+    Serial.println("[MQTT] Publish gagal");
+    if (needResponse == true){
+      Serial.println("[MQTT] Menyimpan pesan");
+      saveDataToFile(payload);
+    }
+  }
+}
+
+//===============================================================================
 
 // SPIFFS READ DOWNTIME
-void readfile() {
-  File file = SPIFFS.open("/down.txt", "r");
+// void readDataFromFile() {
+//   // ======== Shoot file ========
+//   File shootFile = SPIFFS.open("/down.txt", "r");
+//   if (!shootFile) {
+//     // Serial.println("Failed to open file for reading");
+//     return;
+//   }
+//   Serial.println("read shoot");
 
-  StaticJsonDocument<512> jsonArrayDoc;
-  JsonArray jsonArray = jsonArrayDoc.to<JsonArray>();
+//   StaticJsonDocument<2048> shootDoc;  
+//   shootDoc["action"] = "shoot-file";
 
-  // Read the file contents
-  while (file.available()) {
-    String contents = file.readStringUntil('\n');
-    contents.trim();
-    String timeString;
-    int commaPos = contents.indexOf(',');
-    if (commaPos != -1) {
-      numct = contents.substring(0, commaPos).toInt();
-      timeString = contents.substring(commaPos + 2);
+//   JsonArray shootJsonArray = shootDoc.createNestedArray("data");
 
-      unsigned long time = strtoul(timeString.c_str(), NULL, 10);
+//   // Read the file contents
+//   while (shootFile.available()) {
+//     String contents = shootFile.readStringUntil('\n');
+//     contents.trim();
+//     int commaPos = contents.indexOf(',');
+//     if (commaPos != -1) {
+//       cycleTime = contents.substring(0, commaPos).toInt();
+//       String timeString = contents.substring(commaPos + 2);
+//       unsigned long time = strtoul(timeString.c_str(), NULL, 10);
 
-      // Create a JSON object for each data point
-      JsonObject jsonData = jsonArray.createNestedObject();
-      jsonData["id"] = deviceId;
-      jsonData["cycletime"] = numct;
-      jsonData["ip"] = ipAddress;
-      jsonData["time"] = time;
+//       // Create a JSON object for each data point
+//       JsonObject object = shootJsonArray.createNestedObject();
+//       object["id"] = deviceId;
+//       object["cycletime"] = cycleTime;
+//       object["ip"] = ipAddress;
+//       object["time"] = time;
+//     }
+//   }
+//   shootFile.close();
+
+//   char shootJsonBuffer[2048];
+//   serializeJson(shootJsonArray, shootJsonBuffer);
+//   publishData(shootJsonBuffer, REQ_SHOOT_FILE);
+
+//   // SPIFFS.remove("/down.txt");
+
+//   // ======== Andon file ========
+//   File andonFile = SPIFFS.open("/andon.txt", "r");
+//   if (!andonFile) {
+//     // Serial.println("Failed to open file for reading");
+//     return;
+//   }
+//   Serial.println("read andon");
+
+//   StaticJsonDocument<2048> andonDoc;  
+//   andonDoc["action"] = "shoot-file";
+
+//   JsonArray andonJsonArray = andonDoc.createNestedArray("data");
+
+//   // Read the file contents
+//   while (andonFile.available()) {
+//     String line = andonFile.readStringUntil('\n');
+//     line.trim();
+//     if (line.length() > 0) {
+//       StaticJsonDocument<512> temp;
+//       DeserializationError err = deserializeJson(temp, line);
+
+//       if (!err) {
+//         // Tambahkan object JSON dari file ke array
+//         andonJsonArray.add(temp.as<JsonObject>());
+//       }
+//     }
+//   }
+//   andonFile.close();
+
+//   char andonJsonBuffer[1024];
+//   serializeJson(andonJsonArray, andonJsonBuffer);
+//   publishData(andonJsonBuffer, REQ_ANDON_FILE);
+
+//   // SPIFFS.remove("/andon.txt");
+  
+//   // savingDataToFile = false;
+// }
+
+void readDataFromFile() {
+
+  char line[256];
+
+  // ======================================================
+  // =============== SHOOT FILE ===========================
+  // ======================================================
+  File shootFile = SPIFFS.open("/down.txt", "r");
+  if (shootFile) {
+
+    Serial.println("read shoot");
+
+    DynamicJsonDocument shootDoc(12000);   // gunakan heap
+    shootDoc["action"] = "shoot-file";
+    shootDoc["id"] = deviceId;
+    shootDoc["time"] = time(nullptr);
+    JsonArray shootArray = shootDoc.createNestedArray("data");
+
+    while (shootFile.available()) {
+
+      int len = shootFile.readBytesUntil('\n', line, sizeof(line)-1);
+      line[len] = '\0';
+      if (len <= 0) continue;
+
+      char *commaPos = strchr(line, ',');
+      if (!commaPos) continue;
+
+      *commaPos = '\0';
+
+      int cycleTime = atoi(line);
+      unsigned long time = strtoul(commaPos + 1, NULL, 10);
+
+      JsonObject obj = shootArray.createNestedObject();
+      obj["id"]        = deviceId;
+      obj["cycletime"] = cycleTime;
+      obj["ip"]        = ipAddress;
+      obj["time"]      = time;
     }
-  }
-  // Serialize the JSON array to a string
-  String jsonString;
-  serializeJson(jsonArray, jsonString);
 
-  Serial.println(jsonString);
-  webSocket.sendTXT(jsonString);
+    shootFile.close();
 
-  file.close();
-  SPIFFS.remove("/down.txt");
-}
-
-// SPIFFS WRITE DOWNTIME
-void writefile() {
-  File file = SPIFFS.open("/down.txt", "a");
-  if (!file) {
-    Serial.println("Failed to open file for writing");
-    return;
-  }
-  // Write cycletime data to file
-  String data;
-  data += cycleTime;
-  data += ", ";
-  data += unixTime;
-  file.println(data);
-
-  // Close file
-  file.close();
-}
-
-void andonWriteFile(String data) {
-  File file = SPIFFS.open("/andon.txt", "a");
-  if (!file) {
-    Serial.println("Failed to open file for writing");
-    return;
-  }
-  // Write cycletime data to file
-  file.println(data);
-
-  // Close file
-  file.close();
-}
-
-void andonReadFile() {
-  File file = SPIFFS.open("/andon.txt", "r");
-
-  if (!file) {
-    // Serial.println("Failed to open file for reading");
-    return;
-  }
-
-  // Read the file contents
-  while (file.available()) {
-    String json_data = file.readStringUntil('\n');
-    json_data.trim();
-    if (json_data.length() > 0) {
-      webSocket.sendTXT(json_data);
-      Serial.println("Buffered JSON data sent: " + json_data);
+    size_t size = measureJson(shootDoc) + 20;
+    char *buffer = (char*) malloc(size);
+    
+    if (buffer) {
+      serializeJson(shootDoc, buffer, size);
+      Serial.println("kirimshootfile");
+      publishData(buffer, REQ_SHOOT_FILE);
+      free(buffer);
     }
+  } else {
+    Serial.println("Tidak ada shootfile");
   }
-  // Serial.println(json_data);
-  // webSocket.sendTXT(json_data);
 
-  file.close();
-  SPIFFS.remove("/andon.txt");
+
+
+  // ======================================================
+  // =============== ANDON FILE ===========================
+  // ======================================================
+  File andonFile = SPIFFS.open("/andon.txt", "r");
+  if (andonFile) {
+
+    Serial.println("read andon");
+
+    DynamicJsonDocument andonDoc(12000);
+    andonDoc["action"] = "andon-file";
+    andonDoc["id"] = deviceId;
+    andonDoc["time"] = time(nullptr);
+    JsonArray andonArray = andonDoc.createNestedArray("data");
+
+    while (andonFile.available()) {
+
+      int len = andonFile.readBytesUntil('\n', line, sizeof(line)-1);
+      line[len] = '\0';
+      if (len <= 0) continue;
+
+      DynamicJsonDocument temp(1024);
+
+      DeserializationError err = deserializeJson(temp, line);
+      if (err) continue;
+
+      andonArray.add(temp.as<JsonObject>());
+    }
+
+    andonFile.close();
+
+    size_t size = measureJson(andonDoc) + 20;
+    char *buffer = (char*) malloc(size);
+
+    if (buffer) {
+      serializeJson(andonDoc, buffer, size);
+      Serial.println("kirimandonfile");
+      publishData(buffer, REQ_ANDON_FILE);
+      free(buffer);
+    }
+  } else {
+    Serial.println("Tidak ada andonfile");
+  }
+
+  savingDataToFile = false;
 }
+
+//===============================================================================
+
+void saveDataToFile(const char* payload) {
+  StaticJsonDocument<256> doc;
+  
+  DeserializationError error = deserializeJson(doc, payload);
+  if (error) {
+    Serial.print("Gagal parse JSON: ");
+    Serial.println(error.f_str());
+    return;
+  }
+
+  const char* action = doc["action"] | "";
+
+  // ======================================================
+  // =============== SHOOT FILE ===========================
+  // ======================================================
+  if (strcmp(action, "shoot") == 0) {
+
+    int cyc = doc["cyc"].as<int>();
+
+    // time HARUS unsigned long
+    unsigned long time = doc["time"].as<unsigned long>();
+
+    File shootFile = SPIFFS.open("/down.txt", "a");
+    if (!shootFile) {
+      Serial.println("Failed to open file for writing");
+      return;
+    }
+
+    // simpan data
+    shootFile.printf("%d, %lu\n", cyc, time);
+
+    shootFile.close();
+  }
+
+  // ======================================================
+  // =============== ANDON FILE ===========================
+  // ======================================================
+  else {
+
+    File andonFile = SPIFFS.open("/andon.txt", "a");
+    if (!andonFile) {
+      Serial.println("Failed to open file for writing");
+      return;
+    }
+
+    // Hindari karakter CR/LF ganda, simpan bersih
+    andonFile.print(payload);
+    andonFile.print("\n");
+
+    andonFile.close();
+  }
+
+  // set flag
+  savingDataToFile = true;
+}
+
 
 // JSON DATA
-void senddata() {
-  JSON_Data = "{";
-  JSON_Data += "\"action\":\"";
-  JSON_Data += action;
-  JSON_Data += "\",\"id\":";
-  JSON_Data += deviceId;
-  JSON_Data += ",\"name\":\"";
-  JSON_Data += deviceName;
-  JSON_Data += "\"";
-  JSON_Data += ",\"cla\":";
-  JSON_Data += staCla;
-  JSON_Data += ",\"inj\":";
-  JSON_Data += staInj;
-  JSON_Data += ",\"cyc\":";
-  JSON_Data += numct;
-  JSON_Data += ",\"shoot\":";
-  JSON_Data += shoot;
-  JSON_Data += ",\"ip\":\"";
-  JSON_Data += ipAddress;
-  JSON_Data += "\"";
-  JSON_Data += ",\"time\":";
-  JSON_Data += unixTime;
-  JSON_Data += ",\"startTime\":";
-  JSON_Data += startTime;
-  JSON_Data += ",\"version\":\"";
-  JSON_Data += versionNum;
-  JSON_Data += "\"";
-  JSON_Data += "}";
-  Serial.println(JSON_Data);
-  webSocket.sendTXT(JSON_Data);
-  webSocket_server.broadcastTXT(JSON_Data);
-  sendws = false;
+void sendShootData() {
+  StaticJsonDocument<256> doc;
+
+  doc["action"] = "shoot";
+  doc["id"] = deviceId;
+  doc["name"] = deviceName;
+  doc["cla"] = staCla;
+  doc["inj"] = staInj;
+  doc["cyc"] = cycleTime;
+  doc["shoot"] = shoot;
+  doc["ip"] = ipAddress;
+  doc["time"] = unixTime;
+  doc["startTime"] = startTime;
+  doc["version"] = versionNum;
+  
+  char jsonBuffer[256];
+  size_t len = serializeJson(doc, jsonBuffer);
+  publishData(jsonBuffer);
+  needResponse = false;
+  sendData = false;
 }
 
-void sendAndonJSON() {
-  String json_andon = "{";
-  json_andon += "\"action\":\"";
-  json_andon += buttonAction;
-  json_andon += "\",\"id\":";
-  json_andon += deviceId;
-  json_andon += ",\"button\":";
-  json_andon += buttonValue;
-  json_andon += ",\"time\":";
-  json_andon += unixTime;
-  json_andon += ",\"ip\":\"";
-  json_andon += ipAddress;
-  json_andon += "\"";
-  json_andon += "}";
+void sendAndonData() {
+  StaticJsonDocument<256> doc;
 
-  if (websocketConnected){
-    Serial.println(json_andon);
-    webSocket.sendTXT(json_andon);
-  } else {
-    andonWriteFile(json_andon);
-  }
+  doc["action"] = andonAction[andonType];
+  doc["id"] = deviceId;
+  doc["button"] = buttonValue ? 1 : 0;
+  doc["ip"] = ipAddress;
+  doc["time"] = unixTime;
+
+  char jsonBuffer[256];
+  size_t len = serializeJson(doc, jsonBuffer);
+
+  publishData(jsonBuffer);
+  needResponse = false;
   sendAndon = 0;
+}
+
+void sendStatusData() {
+  StaticJsonDocument<256> doc;
+
+  doc["action"] = "status";
+  doc["id"] = deviceId;
+  doc["name"] = deviceName;
+  doc["value"] = statusText[deviceStatus];
+  doc["time"] = time(nullptr);
+  doc["version"] = versionNum;
+
+  char jsonBuffer[256];
+  size_t len = serializeJson(doc, jsonBuffer);
+
+  mqttClient.publish(pubTopic, jsonBuffer, true);
+}
+
+void addRequest(unsigned long time, const char* payload, RequestType type) {
+  for (int i = 0; i < MAX_REQUESTS; i++) {
+    if (!requests[i].waiting) {
+      requests[i].id = time;
+      requests[i].payload = String(payload);
+      requests[i].timeSent = millis();
+      requests[i].waiting = true;
+      requests[i].type = type;
+      return;
+    }
+  }
+  Serial.println("Request queue penuh!");
+}
+
+void clearRequest(unsigned long id) {
+  for (int i = 0; i < MAX_REQUESTS; i++) {
+    if (requests[i].waiting && requests[i].id == id) {
+      requests[i].waiting = false;
+      return;
+    }
+  }
+}
+
+void checkRequestTimeouts() {
+  for (int i = 0; i < MAX_REQUESTS; i++) {
+    if (requests[i].waiting && millis() - requests[i].timeSent > REQUEST_TIMEOUT) {
+      Serial.printf("Request ID %d timeout!\n", requests[i].id);
+      if (requests[i].type == REQ_NEW) {
+        saveDataToFile(requests[i].payload.c_str());
+      }
+      clearRequest(requests[i].id);
+    }
+  }
 }
 
 void loop() {
   // Calling Cycletime capture proses
   monitorCycleTime();
 
+  checkRequestTimeouts();
+
   // Checking WiFi connection
-  if (!WiFi.isConnected() || WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA) {
+  if (!WiFi.isConnected()) {
     // Disconnect from Wifi then try to reconnect
     if (wiFiConnected == true) {
       Serial.println("WiFi disconnected, reconnecting...");
       wifiMillis = millis();
+      WiFi.disconnect();
       WiFi.begin();
       digitalWrite(LED_BUILTIN, HIGH);
       wiFiConnected = false;
-      websocketConnected = false;
+      mqttConnected = false;
     }
   } else {
-    // Connected to Wifi
-    webSocket.setReconnectInterval(5000);
-    webSocket.loop();
+    // WiFi succesfully connected/reconnected
+    if (wiFiConnected == false) {
+      wifiDownSecond = (millis() - wifiMillis) / 1000;  // Wifi Downtime in second
+      wifiDownMinute = wifiDownSecond / 60;             // Wifi Downtime in minute
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(100);
+      ipAddress = WiFi.localIP().toString();
+      Serial.println("Connected to WiFi");
+      wiFiConnected = true;
+    }
+
+    if (!mqttClient.connected()) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      reconnectMQTT();
+    }
+
+    mqttClient.loop();
     server.handleClient();
-    webSocket_server.loop();
     ArduinoOTA.handle();
+
+    // Reading File if MQTT is connected and have saved file
+    if (savingDataToFile && mqttConnected){
+      Serial.println("bacafile");
+      readDataFromFile();
+    }
+
+    unsigned long currentStatusSeconds = millis() / 1000;
+    if (currentStatusSeconds - previousStatusSeconds >= 30) {
+      previousStatusSeconds = currentStatusSeconds;
+      sendStatusData();
+    }
+
+    unsigned long idleDuration = millis() - startIdle;
+    unsigned long idleSeconds = idleDuration / 1000;
+    if (idleSeconds >= timeToIdle) {
+      deviceStatus = STATUS_IDLE;
+    }
 
     // Calling Andon proses and make delay for stabilization button input
     unsigned long buttonMillis = millis();
@@ -1106,29 +1156,15 @@ void loop() {
       timeToCheck();
     }
 
-    // WiFi succesfully reconnected
-    if (wiFiConnected == false) {
-      wifiDownSecond = (millis() - wifiMillis) / 1000;  // Wifi Downtime in second
-      wifiDownMinute = wifiDownSecond / 60;             // Wifi Downtime in minute
-      Serial.println(wifiDownSecond);
-      Serial.println(wifiDownMinute);
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(100);
-      ipAddress = WiFi.localIP().toString();
-      Serial.println("Connected to WiFi");
-      wiFiConnected = true;
+    // Send data via websocket as JSON format
+    if (sendData == true) {
+      sendShootData();
     }
   }
-
-  // Send data via websocket as JSON format
-  if (sendws == true) {
-    senddata();
-  }
-  delay(250);
 }
 
 /*
 Update:
-Menyimpan data waktu (Unix Timestamp) pada memory (SPIIFS) saat setiap Inject, 
-digunakan untuk menjadi pembanding dan perhitungan waktu Downtime saat Wemos dalam keadaan OFF.
+Mengubah protokol komunikasi ke MQTT
+Tambah proses Request-Response untuk kehandalan
 */
