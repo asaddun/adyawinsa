@@ -1,3 +1,22 @@
+#include <ArduinoWiFiServer.h>
+#include <BearSSLHelpers.h>
+#include <CertStoreBearSSL.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiAP.h>
+#include <ESP8266WiFiGeneric.h>
+#include <ESP8266WiFiGratuitous.h>
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266WiFiSTA.h>
+#include <ESP8266WiFiScan.h>
+#include <ESP8266WiFiType.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
+#include <WiFiClientSecureBearSSL.h>
+#include <WiFiServer.h>
+#include <WiFiServerSecure.h>
+#include <WiFiServerSecureBearSSL.h>
+#include <WiFiUdp.h>
+
 /*
  * New Script for WeMos D1 R2 with ESP 8266
  * Based on MC_Arduino v3.1.1 -- LAST USED VERSION : APIK@STMI 2 JUNI 2021
@@ -18,7 +37,7 @@
  *    - setting to ACCESS POINT at first time running
  *
  * @Author: Abraham Sulaeman- 19 Mei 2022
- * Update: Muhammad Asad- 28 Agustus 2024 v4.0.4
+ * Update: Muhammad Asad- 05 Mei 2026 v4.2.1
  */
 
 void (*resetFunc)(void) = 0;  // declare reset function @ address 0
@@ -78,7 +97,7 @@ int run_second, run_minute, run_hour, run_day;
 int c_day, c_month, c_year;
 bool wifiConnected = true, sendData = false, needResponse = false;
 char deviceId[10], deviceName[50];
-char subTopic[36], pubTopic[36];
+char subTopic[36], pubTopic[36], mqttUser[10], mqttPassword[20];
 bool shouldSaveConfig = false, readConfig = false;
 String ipAddress;
 bool wiFiConnected = true, mqttConnected = false, savingDataToFile = false;
@@ -161,6 +180,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
       ESP.restart();
     }
 
+  } else if (strcmp(actionMessage, "wifi") == 0) {
+    JsonObject wifi = doc["value"];
+    if (wifi.isNull()) {
+        Serial.println("[MQTT] WiFi config tidak valid");
+        return;
+    }
+    const char* ssid = wifi["ssid"];
+    const char* password = wifi["password"];
+    if (saveWiFiConfig(ssid, password)) {
+      delay(500);
+      ESP.restart();
+    }
+
   } else if (strcmp(actionMessage, "status") == 0) {
     unsigned long idMessage = doc["id"];
     bool found = false;
@@ -207,6 +239,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (strcmp(valueMessage, "clear-file") == 0) {
       SPIFFS.remove("/down.txt");
       SPIFFS.remove("/andon.txt");
+      SPIFFS.remove("/wifi_config.json");
       Serial.println("file cleared");
     }      
   }
@@ -231,9 +264,9 @@ void reconnectMQTT() {
 
   Serial.println("[MQTT] Reconnecting...");
 
-  mqttClient.disconnect();
+  // mqttClient.disconnect();
 
-  if (mqttClient.connect(deviceId, pubTopic, 1, true, jsonBuffer)) {
+  if (mqttClient.connect(deviceId, mqttUser, mqttPassword, pubTopic, 1, true, jsonBuffer)) {
     mqttConnected = true;
     Serial.println("[MQTT] Connected");
     digitalWrite(LED_BUILTIN, LOW);
@@ -264,24 +297,139 @@ void handleRoot() {
 }
 // END OF WEBSERVER HANDLING PART
 
+bool connectFromWiFiConfig()
+{
+    File file = SPIFFS.open("/wifi_config.json", "r");
+
+    if (!file) {
+        Serial.println("wifi_config.json tidak ditemukan");
+        return false;
+    }
+
+    StaticJsonDocument<256> doc;
+    DeserializationError error = deserializeJson(doc, file);
+    file.close();
+
+    if (error) {
+        Serial.print("Gagal membaca wifi_config.json: ");
+        Serial.println(error.c_str());
+        return false;
+    }
+
+    const char* ssid = doc["ssid"];
+    const char* password = doc["password"];
+
+    if (!ssid || !password) {
+        Serial.println("SSID/password tidak valid");
+        return false;
+    }
+
+    Serial.print("Connecting to WiFi: ");
+    Serial.println(ssid);
+
+    WiFi.begin(ssid, password);
+
+    unsigned long start = millis();
+
+    while (WiFi.status() != WL_CONNECTED &&
+           millis() - start < 15000) {
+        delay(500);
+        Serial.print(".");
+    }
+
+    Serial.println();
+
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("WiFi connected!");
+        Serial.print("IP: ");
+        Serial.println(WiFi.localIP());
+        return true;
+    }
+
+    Serial.println("Gagal connect dari wifi_config.json");
+    return false;
+}
+
+bool saveWiFiConfig(const String& ssid, const String& password)
+{
+    StaticJsonDocument<256> doc;
+
+    doc["ssid"] = ssid;
+    doc["password"] = password;
+
+    File file = SPIFFS.open("/wifi_config.json", "w");
+
+    if (!file) {
+        Serial.println("Gagal membuka wifi_config.json untuk ditulis");
+        return false;
+    }
+
+    if (serializeJson(doc, file) == 0) {
+        Serial.println("Gagal menulis wifi_config.json");
+        file.close();
+        return false;
+    }
+
+    file.close();
+
+    Serial.println("[SYSTEM] WiFi config berhasil disimpan");
+    return true;
+}
+
 // FUNCTION PART OF WIFIMANAGER
 void saveConfigCallback() {
   Serial.println("Should save config");
   shouldSaveConfig = true;
 }
 
+// void connectWifi() {
+//   wifiManager.setConfigPortalTimeout(90);
+//   if (!wifiManager.autoConnect()) {
+//     Serial.println("*wm:Failed to connect and hit timeout");
+//     delay(1000);
+//     connectWifi();
+//   } else {
+//     if (!readConfig){
+//       strcpy(deviceId, customDeviceId.getValue());
+//       strcpy(deviceName, customDeviceName.getValue());
+//     }
+//   }
+// }
+
 void connectWifi() {
-  wifiManager.setConfigPortalTimeout(60);
+  if (SPIFFS.exists("/wifi_config.json")) {
+
+    Serial.println("wifi_config.json ditemukan");
+
+    if (connectFromWiFiConfig()) {
+      // Berhasil menggunakan config utama
+      return;
+    }
+
+    Serial.println("Config WiFi gagal, mencoba WiFiManager...");
+  }
+  else {
+    Serial.println("wifi_config.json belum ada");
+    Serial.println("Menjalankan WiFiManager...");
+  }
+
+  // Fallback / provisioning
+  wifiManager.setConfigPortalTimeout(90);
+
   if (!wifiManager.autoConnect()) {
-    Serial.println("*wm:Failed to connect and hit timeout");
+    Serial.println("*wm: Failed to connect and hit timeout");
     delay(1000);
     connectWifi();
-  } else {
-    if (!readConfig){
-      strcpy(deviceId, customDeviceId.getValue());
-      strcpy(deviceName, customDeviceName.getValue());
-    }
+    return;
   }
+
+  Serial.println("WiFiManager berhasil terhubung");
+
+  // Simpan WiFi yang berhasil digunakan ke wifi_config.json
+  String ssid = wifiManager.getWiFiSSID();
+  String pass = wifiManager.getWiFiPass();
+
+  saveWiFiConfig(ssid, pass);
 }
 
 void setup() {
@@ -349,8 +497,22 @@ void setup() {
     serializeJson(json, Serial);
     serializeJson(json, configFile);
     configFile.close();
+
+    String ssid = wifiManager.getWiFiSSID();
+    String pass = wifiManager.getWiFiPass();
+
+    saveWiFiConfig(ssid, pass);
     // end save
   }
+
+  // if (wifiManager.autoConnect()) {
+  //   if (shouldSaveConfig || !wifiConfigExists) {
+  //     String ssid = wifiManager.getWiFiSSID();
+  //     String pass = wifiManager.getWiFiPass();
+
+  //     saveWiFiConfig(ssid, pass);
+  //   }
+  // }
 
   Serial.println("\n[SYSTEM] WiFi Connected.");
   wifiDownSecond = (millis() - wifiMillis) / 1000;  // Wifi Downtime in second
@@ -390,8 +552,10 @@ void setup() {
 
   sprintf(subTopic, "sensor/injection/%s/response", deviceId);
   sprintf(pubTopic, "sensor/injection/%s/request", deviceId);
+  strcpy(mqttUser, "esp8266");
+  strcpy(mqttPassword, "esp8266-mqtt");
   mqttClient.setBufferSize(4096);
-  mqttClient.setServer("192.168.3.245", 1883);
+  mqttClient.setServer("192.168.3.6", 1883);
   mqttClient.setCallback(callback);
 
   // OTA Setup
@@ -695,30 +859,30 @@ void checkFirmwareUpdate() {
   HTTPClient httpClient;
   httpClient.begin(updateClient, versionUrl);
 
-  Serial.println("[UPDATE] Checking for new Firmware..");
+  Serial.println("[SYSTEM] Checking for new Firmware..");
 
   int httpCode = httpClient.GET();
   if (httpCode == HTTP_CODE_OK) {
     String latestVersion = httpClient.getString();
     latestVersion.trim();
-    Serial.printf("[UPDATE] Current version: %s\n", versionNum);
-    Serial.printf("[UPDATE] Latest version: %s\n", latestVersion);
+    Serial.printf("[SYSTEM] Current version: %s\n", versionNum);
+    Serial.printf("[SYSTEM] Latest version: %s\n", latestVersion);
     if (versionNum != latestVersion) {
-      Serial.println("[UPDATE] New firmware available. Updating...");
+      Serial.println("[SYSTEM] New firmware available. Updating...");
       t_httpUpdate_return ret = ESPhttpUpdate.update(updateClient, firmwareUrl);
 
       if (ret != HTTP_UPDATE_OK) {
-        Serial.printf("[UPDATE] Update failed (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+        Serial.printf("[SYSTEM] Update failed (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
       } else {
-        Serial.println("[UPDATE] Firmware update completed.");
+        Serial.println("[SYSTEM] Firmware update completed.");
       }
     } else {
-      Serial.println("[UPDATE] Firmware is up to date.");
+      Serial.println("[SYSTEM] Firmware is up to date.");
       // To prevent http requesting the rest of the day
       is_update = true;
     }
   } else {
-    Serial.printf("[UPDATE] Failed to check for updates (%d)\n", httpCode);
+    Serial.printf("[SYSTEM] Failed to check for updates (%d)\n", httpCode);
   }
   httpClient.end();
 }
@@ -728,10 +892,10 @@ void publishData(const char* payload, RequestType type = REQ_NEW) {
   DeserializationError error = deserializeJson(doc, payload);
 
   unsigned long time = doc["time"];
-  if (!mqttClient.connected() || mqttConnected == false) {
-    Serial.println("[MQTT] Publish gagal, MQTT tidak terhubung");
+  if (!WiFi.isConnected() || wiFiConnected == false || !mqttClient.connected() || mqttConnected == false) {
+    Serial.println("[SYSTEM] Publish gagal, koneksi tidak terhubung");
     if (needResponse == true){
-      Serial.println("[MQTT] Menyimpan pesan");
+      Serial.println("[SYSTEM] Menyimpan pesan");
       saveDataToFile(payload);
     }
     return;
@@ -753,85 +917,6 @@ void publishData(const char* payload, RequestType type = REQ_NEW) {
 }
 
 //===============================================================================
-
-// SPIFFS READ DOWNTIME
-// void readDataFromFile() {
-//   // ======== Shoot file ========
-//   File shootFile = SPIFFS.open("/down.txt", "r");
-//   if (!shootFile) {
-//     // Serial.println("Failed to open file for reading");
-//     return;
-//   }
-//   Serial.println("read shoot");
-
-//   StaticJsonDocument<2048> shootDoc;  
-//   shootDoc["action"] = "shoot-file";
-
-//   JsonArray shootJsonArray = shootDoc.createNestedArray("data");
-
-//   // Read the file contents
-//   while (shootFile.available()) {
-//     String contents = shootFile.readStringUntil('\n');
-//     contents.trim();
-//     int commaPos = contents.indexOf(',');
-//     if (commaPos != -1) {
-//       cycleTime = contents.substring(0, commaPos).toInt();
-//       String timeString = contents.substring(commaPos + 2);
-//       unsigned long time = strtoul(timeString.c_str(), NULL, 10);
-
-//       // Create a JSON object for each data point
-//       JsonObject object = shootJsonArray.createNestedObject();
-//       object["id"] = deviceId;
-//       object["cycletime"] = cycleTime;
-//       object["ip"] = ipAddress;
-//       object["time"] = time;
-//     }
-//   }
-//   shootFile.close();
-
-//   char shootJsonBuffer[2048];
-//   serializeJson(shootJsonArray, shootJsonBuffer);
-//   publishData(shootJsonBuffer, REQ_SHOOT_FILE);
-
-//   // SPIFFS.remove("/down.txt");
-
-//   // ======== Andon file ========
-//   File andonFile = SPIFFS.open("/andon.txt", "r");
-//   if (!andonFile) {
-//     // Serial.println("Failed to open file for reading");
-//     return;
-//   }
-//   Serial.println("read andon");
-
-//   StaticJsonDocument<2048> andonDoc;  
-//   andonDoc["action"] = "shoot-file";
-
-//   JsonArray andonJsonArray = andonDoc.createNestedArray("data");
-
-//   // Read the file contents
-//   while (andonFile.available()) {
-//     String line = andonFile.readStringUntil('\n');
-//     line.trim();
-//     if (line.length() > 0) {
-//       StaticJsonDocument<512> temp;
-//       DeserializationError err = deserializeJson(temp, line);
-
-//       if (!err) {
-//         // Tambahkan object JSON dari file ke array
-//         andonJsonArray.add(temp.as<JsonObject>());
-//       }
-//     }
-//   }
-//   andonFile.close();
-
-//   char andonJsonBuffer[1024];
-//   serializeJson(andonJsonArray, andonJsonBuffer);
-//   publishData(andonJsonBuffer, REQ_ANDON_FILE);
-
-//   // SPIFFS.remove("/andon.txt");
-  
-//   // savingDataToFile = false;
-// }
 
 void readDataFromFile() {
 
@@ -892,45 +977,45 @@ void readDataFromFile() {
   // ======================================================
   // =============== ANDON FILE ===========================
   // ======================================================
-  File andonFile = SPIFFS.open("/andon.txt", "r");
-  if (andonFile) {
+  // File andonFile = SPIFFS.open("/andon.txt", "r");
+  // if (andonFile) {
 
-    Serial.println("read andon");
+  //   Serial.println("read andon");
 
-    DynamicJsonDocument andonDoc(12000);
-    andonDoc["action"] = "andon-file";
-    andonDoc["id"] = deviceId;
-    andonDoc["time"] = time(nullptr);
-    JsonArray andonArray = andonDoc.createNestedArray("data");
+  //   DynamicJsonDocument andonDoc(12000);
+  //   andonDoc["action"] = "andon-file";
+  //   andonDoc["id"] = deviceId;
+  //   andonDoc["time"] = time(nullptr);
+  //   JsonArray andonArray = andonDoc.createNestedArray("data");
 
-    while (andonFile.available()) {
+  //   while (andonFile.available()) {
 
-      int len = andonFile.readBytesUntil('\n', line, sizeof(line)-1);
-      line[len] = '\0';
-      if (len <= 0) continue;
+  //     int len = andonFile.readBytesUntil('\n', line, sizeof(line)-1);
+  //     line[len] = '\0';
+  //     if (len <= 0) continue;
 
-      DynamicJsonDocument temp(1024);
+  //     DynamicJsonDocument temp(1024);
 
-      DeserializationError err = deserializeJson(temp, line);
-      if (err) continue;
+  //     DeserializationError err = deserializeJson(temp, line);
+  //     if (err) continue;
 
-      andonArray.add(temp.as<JsonObject>());
-    }
+  //     andonArray.add(temp.as<JsonObject>());
+  //   }
 
-    andonFile.close();
+  //   andonFile.close();
 
-    size_t size = measureJson(andonDoc) + 20;
-    char *buffer = (char*) malloc(size);
+  //   size_t size = measureJson(andonDoc) + 20;
+  //   char *buffer = (char*) malloc(size);
 
-    if (buffer) {
-      serializeJson(andonDoc, buffer, size);
-      Serial.println("kirimandonfile");
-      publishData(buffer, REQ_ANDON_FILE);
-      free(buffer);
-    }
-  } else {
-    Serial.println("Tidak ada andonfile");
-  }
+  //   if (buffer) {
+  //     serializeJson(andonDoc, buffer, size);
+  //     Serial.println("kirimandonfile");
+  //     publishData(buffer, REQ_ANDON_FILE);
+  //     free(buffer);
+  //   }
+  // } else {
+  //   Serial.println("Tidak ada andonfile");
+  // }
 
   savingDataToFile = false;
 }
@@ -974,20 +1059,20 @@ void saveDataToFile(const char* payload) {
   // ======================================================
   // =============== ANDON FILE ===========================
   // ======================================================
-  else {
+  // else {
 
-    File andonFile = SPIFFS.open("/andon.txt", "a");
-    if (!andonFile) {
-      Serial.println("Failed to open file for writing");
-      return;
-    }
+  //   File andonFile = SPIFFS.open("/andon.txt", "a");
+  //   if (!andonFile) {
+  //     Serial.println("Failed to open file for writing");
+  //     return;
+  //   }
 
-    // Hindari karakter CR/LF ganda, simpan bersih
-    andonFile.print(payload);
-    andonFile.print("\n");
+  //   // Hindari karakter CR/LF ganda, simpan bersih
+  //   andonFile.print(payload);
+  //   andonFile.print("\n");
 
-    andonFile.close();
-  }
+  //   andonFile.close();
+  // }
 
   // set flag
   savingDataToFile = true;
@@ -1043,6 +1128,7 @@ void sendStatusData() {
   doc["value"] = statusText[deviceStatus];
   doc["time"] = time(nullptr);
   doc["version"] = versionNum;
+  doc["ssid"] = WiFi.SSID();
 
   char jsonBuffer[256];
   size_t len = serializeJson(doc, jsonBuffer);
@@ -1097,7 +1183,7 @@ void loop() {
     if (wiFiConnected == true) {
       Serial.println("WiFi disconnected, reconnecting...");
       wifiMillis = millis();
-      WiFi.disconnect();
+      // WiFi.disconnect();
       WiFi.begin();
       digitalWrite(LED_BUILTIN, HIGH);
       wiFiConnected = false;
@@ -1156,10 +1242,11 @@ void loop() {
       timeToCheck();
     }
 
-    // Send data via websocket as JSON format
-    if (sendData == true) {
-      sendShootData();
-    }
+  }
+
+  // Send data via websocket as JSON format
+  if (sendData == true) {
+    sendShootData();
   }
 }
 
