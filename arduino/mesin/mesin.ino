@@ -66,7 +66,7 @@ enum RequestType {
 // DECLARE VARIABLE
 const char* versionUrl = "https://apik.adyawinsa.com/smsd/api/update-arduino/version.txt";
 const char* firmwareUrl = "https://apik.adyawinsa.com/smsd/api/update-arduino/firmware.bin";
-String versionNum = "4.1.1"; // System Version
+String versionNum = "4.2.0"; // System Version
 bool laststateInject = LOW, laststateClamp = LOW, stateClamp = LOW, stateInject = LOW;  // previous state of the button
 unsigned long timenow;
 unsigned long cycleTime;
