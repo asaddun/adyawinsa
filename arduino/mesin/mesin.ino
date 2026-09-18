@@ -1,22 +1,3 @@
-#include <ArduinoWiFiServer.h>
-#include <BearSSLHelpers.h>
-#include <CertStoreBearSSL.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WiFiAP.h>
-#include <ESP8266WiFiGeneric.h>
-#include <ESP8266WiFiGratuitous.h>
-#include <ESP8266WiFiMulti.h>
-#include <ESP8266WiFiSTA.h>
-#include <ESP8266WiFiScan.h>
-#include <ESP8266WiFiType.h>
-#include <WiFiClient.h>
-#include <WiFiClientSecure.h>
-#include <WiFiClientSecureBearSSL.h>
-#include <WiFiServer.h>
-#include <WiFiServerSecure.h>
-#include <WiFiServerSecureBearSSL.h>
-#include <WiFiUdp.h>
-
 /*
  * New Script for WeMos D1 R2 with ESP 8266
  * Based on MC_Arduino v3.1.1 -- LAST USED VERSION : APIK@STMI 2 JUNI 2021
@@ -97,7 +78,7 @@ int run_second, run_minute, run_hour, run_day;
 int c_day, c_month, c_year;
 bool wifiConnected = true, sendData = false, needResponse = false;
 char deviceId[10], deviceName[50];
-char subTopic[36], pubTopic[36], mqttUser[10], mqttPassword[20];
+char subTopic[36], broadcastTopic[20], pubTopic[36], mqttUser[10], mqttPassword[20];
 bool shouldSaveConfig = false, readConfig = false;
 String ipAddress;
 bool wiFiConnected = true, mqttConnected = false, savingDataToFile = false;
@@ -186,8 +167,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
         Serial.println("[MQTT] WiFi config tidak valid");
         return;
     }
+
     const char* ssid = wifi["ssid"];
     const char* password = wifi["password"];
+
+    if (WiFi.SSID() == ssid) {
+      return;
+    }
+
     if (saveWiFiConfig(ssid, password)) {
       delay(500);
       ESP.restart();
@@ -272,6 +259,7 @@ void reconnectMQTT() {
     digitalWrite(LED_BUILTIN, LOW);
 
     mqttClient.subscribe(subTopic);
+    mqttClient.subscribe(broadcastTopic);
     Serial.print("[MQTT] Subscribed to: ");
     Serial.println(subTopic);
 
@@ -302,7 +290,7 @@ bool connectFromWiFiConfig()
     File file = SPIFFS.open("/wifi_config.json", "r");
 
     if (!file) {
-        Serial.println("wifi_config.json tidak ditemukan");
+        Serial.println("[SYSTEM] wifi_config.json tidak ditemukan");
         return false;
     }
 
@@ -311,7 +299,7 @@ bool connectFromWiFiConfig()
     file.close();
 
     if (error) {
-        Serial.print("Gagal membaca wifi_config.json: ");
+        Serial.print("[SYSTEM] Gagal membaca wifi_config.json: ");
         Serial.println(error.c_str());
         return false;
     }
@@ -320,11 +308,11 @@ bool connectFromWiFiConfig()
     const char* password = doc["password"];
 
     if (!ssid || !password) {
-        Serial.println("SSID/password tidak valid");
+        Serial.println("[SYSTEM] SSID/password tidak valid");
         return false;
     }
 
-    Serial.print("Connecting to WiFi: ");
+    Serial.print("[SYSTEM] Connecting to WiFi: ");
     Serial.println(ssid);
 
     WiFi.begin(ssid, password);
@@ -332,7 +320,7 @@ bool connectFromWiFiConfig()
     unsigned long start = millis();
 
     while (WiFi.status() != WL_CONNECTED &&
-           millis() - start < 15000) {
+           millis() - start < 10000) {
         delay(500);
         Serial.print(".");
     }
@@ -340,13 +328,10 @@ bool connectFromWiFiConfig()
     Serial.println();
 
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("WiFi connected!");
-        Serial.print("IP: ");
-        Serial.println(WiFi.localIP());
-        return true;
+      return true;
     }
 
-    Serial.println("Gagal connect dari wifi_config.json");
+    Serial.println("[SYSTEM] Gagal connect dari wifi_config.json");
     return false;
 }
 
@@ -360,12 +345,12 @@ bool saveWiFiConfig(const String& ssid, const String& password)
     File file = SPIFFS.open("/wifi_config.json", "w");
 
     if (!file) {
-        Serial.println("Gagal membuka wifi_config.json untuk ditulis");
+        Serial.println("[SYSTEM] Gagal membuka wifi_config.json untuk ditulis");
         return false;
     }
 
     if (serializeJson(doc, file) == 0) {
-        Serial.println("Gagal menulis wifi_config.json");
+        Serial.println("[SYSTEM] Gagal menulis wifi_config.json");
         file.close();
         return false;
     }
@@ -399,18 +384,18 @@ void saveConfigCallback() {
 void connectWifi() {
   if (SPIFFS.exists("/wifi_config.json")) {
 
-    Serial.println("wifi_config.json ditemukan");
+    Serial.println("[SYSTEM] wifi_config.json ditemukan");
 
     if (connectFromWiFiConfig()) {
       // Berhasil menggunakan config utama
       return;
     }
 
-    Serial.println("Config WiFi gagal, mencoba WiFiManager...");
+    Serial.println("[SYSTEM] Config WiFi gagal, mencoba WiFiManager...");
   }
   else {
-    Serial.println("wifi_config.json belum ada");
-    Serial.println("Menjalankan WiFiManager...");
+    Serial.println("[SYSTEM] wifi_config.json belum ada");
+    Serial.println("[SYSTEM] Menjalankan WiFiManager...");
   }
 
   // Fallback / provisioning
@@ -423,7 +408,7 @@ void connectWifi() {
     return;
   }
 
-  Serial.println("WiFiManager berhasil terhubung");
+  Serial.println("[SYSTEM] WiFiManager berhasil terhubung");
 
   // Simpan WiFi yang berhasil digunakan ke wifi_config.json
   String ssid = wifiManager.getWiFiSSID();
@@ -505,16 +490,7 @@ void setup() {
     // end save
   }
 
-  // if (wifiManager.autoConnect()) {
-  //   if (shouldSaveConfig || !wifiConfigExists) {
-  //     String ssid = wifiManager.getWiFiSSID();
-  //     String pass = wifiManager.getWiFiPass();
-
-  //     saveWiFiConfig(ssid, pass);
-  //   }
-  // }
-
-  Serial.println("\n[SYSTEM] WiFi Connected.");
+  Serial.println("[SYSTEM] WiFi Connected.");
   wifiDownSecond = (millis() - wifiMillis) / 1000;  // Wifi Downtime in second
   wifiDownMinute = wifiDownSecond / 60;             // Wifi Downtime in minute
   delay(100);
@@ -551,6 +527,7 @@ void setup() {
   // client.setBufferSizes(512, 512);
 
   sprintf(subTopic, "sensor/injection/%s/response", deviceId);
+  strcpy(broadcastTopic, "sensor/broadcast");
   sprintf(pubTopic, "sensor/injection/%s/request", deviceId);
   strcpy(mqttUser, "esp8266");
   strcpy(mqttPassword, "esp8266-mqtt");
@@ -1181,13 +1158,21 @@ void loop() {
   if (!WiFi.isConnected()) {
     // Disconnect from Wifi then try to reconnect
     if (wiFiConnected == true) {
-      Serial.println("WiFi disconnected, reconnecting...");
+      Serial.println("[SYSTEM] WiFi disconnected, reconnecting...");
       wifiMillis = millis();
       // WiFi.disconnect();
       WiFi.begin();
       digitalWrite(LED_BUILTIN, HIGH);
       wiFiConnected = false;
       mqttConnected = false;
+    }
+
+    if ((millis() - wifiMillis) / 1000 >= 300) {
+        Serial.println("[SYSTEM] WiFi disconnected too long");
+        Serial.println("[SYSTEM] Restarting ESP...");
+
+        delay(500);
+        ESP.restart();
     }
   } else {
     // WiFi succesfully connected/reconnected
@@ -1197,7 +1182,7 @@ void loop() {
       digitalWrite(LED_BUILTIN, LOW);
       delay(100);
       ipAddress = WiFi.localIP().toString();
-      Serial.println("Connected to WiFi");
+      Serial.println("[SYSTEM] Connected to WiFi");
       wiFiConnected = true;
     }
 
