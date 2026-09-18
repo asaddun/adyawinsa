@@ -831,7 +831,7 @@ void timeToCheck() {
 void checkFirmwareUpdate() {
   WiFiClientSecure updateClient;
   updateClient.setInsecure();
-  updateClient.setBufferSizes(512, 512);
+  // updateClient.setBufferSizes(512, 512);
 
   HTTPClient httpClient;
   httpClient.begin(updateClient, versionUrl);
@@ -844,6 +844,7 @@ void checkFirmwareUpdate() {
     latestVersion.trim();
     Serial.printf("[SYSTEM] Current version: %s\n", versionNum);
     Serial.printf("[SYSTEM] Latest version: %s\n", latestVersion);
+    httpClient.end();
     if (versionNum != latestVersion) {
       Serial.println("[SYSTEM] New firmware available. Updating...");
       t_httpUpdate_return ret = ESPhttpUpdate.update(updateClient, firmwareUrl);
@@ -861,7 +862,6 @@ void checkFirmwareUpdate() {
   } else {
     Serial.printf("[SYSTEM] Failed to check for updates (%d)\n", httpCode);
   }
-  httpClient.end();
 }
 
 void publishData(const char* payload, RequestType type = REQ_NEW) {
